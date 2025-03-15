@@ -32,7 +32,5 @@ namespace consoleAppTest.database
         public DbSet<IndexedValue> IndexedValues { get; set; }
         public DbSet<TagInstance> TagInstances { get; set; }
         public DbSet<Pattern> Patterns { get; set; }
-
-
     }
 }
