@@ -189,6 +189,10 @@ namespace consoleAppTest.Tests
                 LineNumber = 1
             };
 
+            int startFirstIp = "Connections: ".Length;
+            int startSecondIp = "Connections: 192.168.0.1:80, ".Length;
+
+
             // Act
             var results = matcher.ProcessLine(line);
 
@@ -199,12 +203,12 @@ namespace consoleAppTest.Tests
             var firstMatch = addressPortMatches[0];
             Assert.Equal("192.168.0.1:80", firstMatch.Value);
             Assert.Equal("192.168.0.1:80".Length, firstMatch.TagInstances.First().Length);
-            Assert.Equal(13, firstMatch.TagInstances.First().StartIndex);
+            Assert.Equal(startFirstIp, firstMatch.TagInstances.First().StartIndex);
 
             var secondMatch = addressPortMatches[1];
             Assert.Equal("10.0.0.1:443", secondMatch.Value);
             Assert.Equal("10.0.0.1:443".Length, secondMatch.TagInstances.First().Length);
-            Assert.Equal(29, secondMatch.TagInstances.First().StartIndex);
+            Assert.Equal(startSecondIp, secondMatch.TagInstances.First().StartIndex);
         }
     }
 }
