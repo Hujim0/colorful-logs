@@ -9,7 +9,7 @@ namespace consoleAppTest.structs
         public Guid Id { get; set; }
 
         // Parent pattern containing the placeholder
-        public Guid? ParentPatternId { get; set; }
+        public Guid ParentPatternId { get; set; }
         [ForeignKey(nameof(ParentPatternId))]
         public virtual required Pattern ParentPattern { get; set; }
 
@@ -20,5 +20,6 @@ namespace consoleAppTest.structs
 
         // Placeholder name (e.g., "ipaddress" in "$ipaddress")
         public required string PlaceholderName { get; set; }
+
     }
 }

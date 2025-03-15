@@ -15,16 +15,5 @@ namespace consoleAppTest.structs
         public virtual List<PatternComponent> Components { get; set; } = [];
 
         public virtual List<IndexedValue> IndexedValues { get; set; } = [];
-
-        public string GetResolvedRegex()
-        {
-            string regex = SyntaxString;
-            foreach (var component in Components)
-            {
-                string childRegex = component.ChildPattern.GetResolvedRegex();
-                regex = regex.Replace($"${component.PlaceholderName}", childRegex);
-            }
-            return regex;
-        }
     }
 }

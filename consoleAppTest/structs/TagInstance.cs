@@ -6,9 +6,9 @@ namespace consoleAppTest.structs
     {
         [Key]
         public Guid Id { get; set; }
-        public required IndexedLine Line { get; set; }
-        public required IndexedValue Value { get; set; }
-        public int ValuePos { get; set; }
-        public int ValueLength { get; set; }
+        public required IndexedLine IndexedLine { get; set; }
+        public required IndexedValue IndexedValue { get; set; }
+        public int StartIndex { get; set; }
+        public int Length { get; set; }
     }
 }

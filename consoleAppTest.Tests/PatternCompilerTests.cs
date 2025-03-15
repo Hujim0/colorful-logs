@@ -13,7 +13,7 @@ namespace consoleAppTest.Tests
                 Id = Guid.NewGuid(),
                 PatternName = "patternName",
                 SyntaxString = "^test$",
-                Components = new List<PatternComponent>()
+                Components = []
             };
             var patterns = new List<Pattern> { pattern };
 
@@ -35,14 +35,14 @@ namespace consoleAppTest.Tests
                 PatternName = "patternName",
 
                 SyntaxString = @"\d+",
-                Components = new List<PatternComponent>()
+                Components = []
             };
             var parentPattern = new Pattern
             {
                 Id = Guid.NewGuid(),
                 PatternName = "patternName",
                 SyntaxString = @"$child",
-                Components = new List<PatternComponent>()
+                Components = []
             };
             parentPattern.Components.Add(new PatternComponent
             {
@@ -116,14 +116,14 @@ namespace consoleAppTest.Tests
                 Id = Guid.NewGuid(),
                 PatternName = "",
                 SyntaxString = "$B",
-                Components = new List<PatternComponent>()
+                Components = []
             };
             var patternB = new Pattern
             {
                 Id = Guid.NewGuid(),
                 PatternName = "",
                 SyntaxString = "$A",
-                Components = new List<PatternComponent>()
+                Components = []
             };
             patternA.Components.Add(new PatternComponent { PlaceholderName = "B", ChildPattern = patternB, ParentPattern = patternA });
             patternB.Components.Add(new PatternComponent { PlaceholderName = "A", ChildPattern = patternA, ParentPattern = patternB });
@@ -238,7 +238,7 @@ namespace consoleAppTest.Tests
                 Id = Guid.NewGuid(),
                 PatternName = "patternName",
                 SyntaxString = "$unknown",
-                Components = new List<PatternComponent>()
+                Components = []
             };
             var patterns = new List<Pattern> { parent };
 
@@ -250,4 +250,3 @@ namespace consoleAppTest.Tests
         }
     }
 }
-
