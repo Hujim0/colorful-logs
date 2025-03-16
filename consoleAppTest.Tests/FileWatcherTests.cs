@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using consoleAppTest.fileWatcher;
+using consoleAppTest.structs;
 
 namespace consoleAppTest.Tests
 {
@@ -21,10 +18,17 @@ namespace consoleAppTest.Tests
             Directory.Delete(_tempDirectory, recursive: true);
         }
 
+        public static DataSource GetDataSource() {
+            return new DataSource {
+                Id = Guid.NewGuid(),
+                Name = "test source",  
+            };
+        }
+
         [Fact]
         public void FileCreated_WhenFileCreated_EventFires()
         {
-            using var watcher = new FileWatcher(_tempDirectory);
+            using var watcher = new FileWatcher(_tempDirectory, GetDataSource());
             var resetEvent = new ManualResetEventSlim();
             string createdPath = "";
 
@@ -47,7 +51,7 @@ namespace consoleAppTest.Tests
             var testFile = Path.Combine(_tempDirectory, "test.txt");
             File.WriteAllText(testFile, "content");
 
-            using var watcher = new FileWatcher(_tempDirectory);
+            using var watcher = new FileWatcher(_tempDirectory, GetDataSource());
             var resetEvent = new ManualResetEventSlim();
             string deletedPath = "";
 
@@ -69,7 +73,7 @@ namespace consoleAppTest.Tests
             var testFile = Path.Combine(_tempDirectory, "test.txt");
             File.WriteAllText(testFile, "initial content");
 
-            using var watcher = new FileWatcher(_tempDirectory);
+            using var watcher = new FileWatcher(_tempDirectory, GetDataSource());
             var resetEvent = new ManualResetEventSlim();
             bool eventFired = false;
 
@@ -92,7 +96,7 @@ namespace consoleAppTest.Tests
             var destFile = Path.Combine(_tempDirectory, "dest.txt");
             File.WriteAllText(sourceFile, "content");
 
-            using var watcher = new FileWatcher(_tempDirectory);
+            using var watcher = new FileWatcher(_tempDirectory, GetDataSource());
             var resetEvent = new ManualResetEventSlim();
             string oldPath = "";
             string newPath = "";
@@ -115,7 +119,7 @@ namespace consoleAppTest.Tests
         [Fact]
         public void EventsNotFiredAfterDisposal()
         {
-            var watcher = new FileWatcher(_tempDirectory);
+            var watcher = new FileWatcher(_tempDirectory, GetDataSource());
             var resetEvent = new ManualResetEventSlim();
             bool eventFired = false;
 
@@ -137,7 +141,7 @@ namespace consoleAppTest.Tests
         [Fact]
         public void FileCreated_InSubdirectory_EventFires()
         {
-            using var watcher = new FileWatcher(_tempDirectory);
+            using var watcher = new FileWatcher(_tempDirectory, GetDataSource());
             var resetEvent = new ManualResetEventSlim();
             string createdPath = "";
 
@@ -160,7 +164,7 @@ namespace consoleAppTest.Tests
         public void FileAppended_WhenFileAppended_EventFires()
         {
             //first initialize so it adds file to hashmap
-            using var watcher = new FileWatcher(_tempDirectory);
+            using var watcher = new FileWatcher(_tempDirectory, GetDataSource());
 
             var testFile = Path.Combine(_tempDirectory, "test.txt");
             File.WriteAllText(testFile, "initial \n");

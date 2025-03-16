@@ -10,20 +10,23 @@ namespace consoleAppTest.fileWatcher
     using System.Collections.Concurrent;
     using System.IO;
     using System.Threading;
+    using consoleAppTest.structs;
 
     public class FileWatcher : IDisposable
     {
         private readonly FileSystemWatcher _watcher;
-        private readonly ConcurrentDictionary<string, long> _maxFileSizes;
+        private readonly ConcurrentDictionary<string, LocalFile> _Files;
 
+        private DataSource source;
         public event FileSystemEventHandler? FileCreated;
         public event FileSystemEventHandler? FileDeleted;
         public event FileSystemEventHandler? FileAppended;
         public event RenamedEventHandler? FileMoved;
 
-        public FileWatcher(string folderPath)
+        public FileWatcher(string folderPath, DataSource source)
         {
-            _maxFileSizes = new ConcurrentDictionary<string, long>();
+            _Files = new ConcurrentDictionary<string, LocalFile>();
+            this.source = source;
 
             _watcher = new FileSystemWatcher
             {
@@ -45,24 +48,33 @@ namespace consoleAppTest.fileWatcher
             var length = GetFileLength(e.FullPath);
             if (length != -1)
             {
-                _maxFileSizes.TryAdd(e.FullPath, length);
+                var file = new LocalFile
+                {
+                    Id = Guid.NewGuid(),
+                    Path = e.FullPath,
+                    dataSource = source,
+                    LastLength = length,
+                };
+
+                _Files.TryAdd(e.FullPath, file);
                 FileCreated?.Invoke(this, e);
             }
         }
 
         private void OnDeleted(object sender, FileSystemEventArgs e)
         {
-            _maxFileSizes.TryRemove(e.FullPath, out _);
+            _Files.TryRemove(e.FullPath, out _);
             FileDeleted?.Invoke(this, e);
         }
 
         private void OnRenamed(object sender, RenamedEventArgs e)
         {
-            _maxFileSizes.TryRemove(e.OldFullPath, out _);
+            bool res = _Files.TryGetValue(e.OldFullPath, out LocalFile? file);
             var newLength = GetFileLength(e.FullPath);
-            if (newLength != -1)
+            if (newLength != -1 && res && file != null)
             {
-                _maxFileSizes.TryAdd(e.FullPath, newLength);
+                file.Path = e.FullPath;
+                file.LastLength = newLength;
             }
             FileMoved?.Invoke(this, e);
         }
@@ -73,16 +85,19 @@ namespace consoleAppTest.fileWatcher
             if (newLength == -1) return;
 
             bool isAppend = false;
-            _maxFileSizes.AddOrUpdate(e.FullPath,
-                newLength,
-                (path, oldMax) =>
+            _Files.AddOrUpdate(e.FullPath,
+                new LocalFile { Path = e.FullPath, LastLength = newLength, dataSource = source },
+                (path, file) =>
                 {
+                    var oldMax = file.LastLength;
+
                     if (newLength > oldMax)
                     {
                         isAppend = true;
-                        return newLength;
+                        file.LastLength = newLength;
+                        return file;
                     }
-                    return oldMax;
+                    return file;
                 });
 
             if (isAppend)

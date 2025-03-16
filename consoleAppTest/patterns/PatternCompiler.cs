@@ -4,9 +4,9 @@ namespace consoleAppTest.structs
 {
     public static class PatternCompiler
     {
-        public static (Dictionary<Guid, string> CompiledRegexes, List<Pattern> SortedPatterns) CompilePatterns(List<Pattern> patterns)
+        public static (Dictionary<Guid, string> ResolvedRegexes, List<Pattern> SortedPatterns) CompilePatterns(List<Pattern> patterns)
         {
-            var compiledRegexes = new Dictionary<Guid, string>();
+            var resolvedRegexes = new Dictionary<Guid, string>();
             var placeholderMappings = new Dictionary<Guid, Dictionary<string, Pattern>>();
 
             // Preprocess each pattern to map PlaceholderName to ChildPattern
@@ -19,18 +19,18 @@ namespace consoleAppTest.structs
             // Compile each pattern, handling dependencies and cycles
             foreach (var pattern in patterns)
             {
-                if (!compiledRegexes.ContainsKey(pattern.Id))
+                if (!resolvedRegexes.ContainsKey(pattern.Id))
                 {
-                    CompilePattern(pattern, compiledRegexes, placeholderMappings, new HashSet<Guid>());
+                    CompilePattern(pattern, resolvedRegexes, placeholderMappings, new HashSet<Guid>());
                 }
             }
 
             // Sort the patterns by regex length descending
             var sortedPatterns = patterns
-                .OrderByDescending(pattern => compiledRegexes[pattern.Id].Length)
+                .OrderByDescending(pattern => resolvedRegexes[pattern.Id].Length)
                 .ToList();
 
-            return (compiledRegexes, sortedPatterns);
+            return (resolvedRegexes, sortedPatterns);
         }
 
         private static void CompilePattern(

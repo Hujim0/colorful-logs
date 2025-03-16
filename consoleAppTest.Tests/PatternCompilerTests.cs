@@ -18,10 +18,10 @@ namespace consoleAppTest.Tests
             var patterns = new List<Pattern> { pattern };
 
             // Act
-            var (CompiledRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
+            var (ResolvedRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
 
             // Assert
-            Assert.Equal("^test$", CompiledRegexes[pattern.Id]);
+            Assert.Equal("^test$", ResolvedRegexes[pattern.Id]);
             Assert.Single(SortedPatterns);
         }
 
@@ -53,10 +53,10 @@ namespace consoleAppTest.Tests
             var patterns = new List<Pattern> { parentPattern, childPattern };
 
             // Act
-            var (CompiledRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
+            var (ResolvedRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
 
             // Assert
-            Assert.Equal(@"\d+", CompiledRegexes[parentPattern.Id]);
+            Assert.Equal(@"\d+", ResolvedRegexes[parentPattern.Id]);
         }
 
         [Fact]
@@ -101,10 +101,10 @@ namespace consoleAppTest.Tests
             var patterns = new List<Pattern> { patternA, patternB, patternC };
 
             // Act
-            var (CompiledRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
+            var (ResolvedRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
 
             // Assert
-            Assert.Equal("C", CompiledRegexes[patternA.Id]);
+            Assert.Equal("C", ResolvedRegexes[patternA.Id]);
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace consoleAppTest.Tests
             var patterns = new List<Pattern> { middlePattern, longestPattern, shortestPattern };
 
             // Act
-            var (CompiledRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
+            var (ResolvedRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
 
             // Assert
             var expectedOrder = new List<Pattern> { longestPattern, middlePattern, shortestPattern };
@@ -195,10 +195,10 @@ namespace consoleAppTest.Tests
             var patterns = new List<Pattern> { parent, childIp, childIpAddress };
 
             // Act
-            var result = PatternCompiler.CompilePatterns(patterns);
+            var (ResolvedRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
 
             // Assert
-            Assert.Equal("ab", result.CompiledRegexes[parent.Id]);
+            Assert.Equal("ab", ResolvedRegexes[parent.Id]);
         }
 
         [Fact]
@@ -223,10 +223,10 @@ namespace consoleAppTest.Tests
             var patterns = new List<Pattern> { parent, child };
 
             // Act
-            var result = PatternCompiler.CompilePatterns(patterns);
+            var (ResolvedRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
 
             // Assert
-            Assert.Equal("b", result.CompiledRegexes[parent.Id]);
+            Assert.Equal("b", ResolvedRegexes[parent.Id]);
         }
 
         [Fact]
@@ -243,10 +243,10 @@ namespace consoleAppTest.Tests
             var patterns = new List<Pattern> { parent };
 
             // Act
-            var (CompiledRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
+            var (ResolvedRegexes, SortedPatterns) = PatternCompiler.CompilePatterns(patterns);
 
             // Assert
-            Assert.Equal("$unknown", CompiledRegexes[parent.Id]);
+            Assert.Equal("$unknown", ResolvedRegexes[parent.Id]);
         }
     }
 }
