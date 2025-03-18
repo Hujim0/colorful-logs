@@ -1,139 +1,249 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace consoleAppTest.fileWatcher
+public class FileWatcher : IDisposable
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.IO;
-    using System.Threading;
-    using consoleAppTest.structs;
+    private readonly FileSystemWatcher _watcher;
+    private readonly ConcurrentDictionary<string, FileState> _fileStates;
+    private readonly TimeSpan _debounceDelay;
+    private readonly SemaphoreSlim _debounceSemaphore = new(1, 1);
+    private readonly bool _trackInitialFiles;
 
-    public class FileWatcher : IDisposable
+    public event Action<string, long>? FileCreated;
+    public event Action<string>? FileDeleted;
+    public event Action<string, long>? FileAppended;
+    public event Action<string, long>? FileTruncated;
+    public event Action<string, string>? FileMoved;
+    public event Action<string, Exception>? ErrorOccurred;
+
+    public FileWatcher(string folderPath, TimeSpan? debounceDelay = null, bool trackInitialFiles = true)
     {
-        private readonly FileSystemWatcher _watcher;
-        private readonly ConcurrentDictionary<string, LocalFile> _Files;
+        _debounceDelay = debounceDelay ?? TimeSpan.FromMilliseconds(500);
+        _trackInitialFiles = trackInitialFiles;
+        _fileStates = new ConcurrentDictionary<string, FileState>();
 
-        private DataSource source;
-        public event FileSystemEventHandler? FileCreated;
-        public event FileSystemEventHandler? FileDeleted;
-        public event FileSystemEventHandler? FileAppended;
-        public event RenamedEventHandler? FileMoved;
-
-        public FileWatcher(string folderPath, DataSource source)
+        _watcher = new FileSystemWatcher
         {
-            _Files = new ConcurrentDictionary<string, LocalFile>();
-            this.source = source;
+            Path = folderPath,
+            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName |
+                         NotifyFilters.Size | NotifyFilters.LastWrite,
+            IncludeSubdirectories = true,
+            EnableRaisingEvents = true,
+            InternalBufferSize = 65536 // Max size for Windows
+        };
 
-            _watcher = new FileSystemWatcher
-            {
-                Path = folderPath,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
-                             | NotifyFilters.Size | NotifyFilters.LastWrite,
-                IncludeSubdirectories = true,
-                EnableRaisingEvents = true
-            };
+        _watcher.Created += OnCreated;
+        _watcher.Deleted += OnDeleted;
+        _watcher.Renamed += OnRenamed;
+        _watcher.Changed += OnChanged;
+        _watcher.Error += OnWatcherError;
 
-            _watcher.Created += OnCreated;
-            _watcher.Deleted += OnDeleted;
-            _watcher.Renamed += OnRenamed;
-            _watcher.Changed += OnChanged;
+        if (_trackInitialFiles)
+        {
+            InitializeExistingFiles();
         }
+    }
 
-        private void OnCreated(object sender, FileSystemEventArgs e)
+    private void InitializeExistingFiles()
+    {
+        try
         {
-            var length = GetFileLength(e.FullPath);
-            if (length != -1)
+            foreach (var filePath in Directory.GetFiles(_watcher.Path, "*.*", SearchOption.AllDirectories))
             {
-                var file = new LocalFile
-                {
-                    Id = Guid.NewGuid(),
-                    Path = e.FullPath,
-                    dataSource = source,
-                    LastLength = length,
-                };
-
-                _Files.TryAdd(e.FullPath, file);
-                FileCreated?.Invoke(this, e);
+                var fileInfo = new FileInfo(filePath);
+                _fileStates.TryAdd(filePath, new FileState { Length = fileInfo.Length, LastWriteTime = fileInfo.LastWriteTimeUtc });
+                FileCreated?.Invoke(filePath, fileInfo.Length);
             }
         }
-
-        private void OnDeleted(object sender, FileSystemEventArgs e)
+        catch (Exception ex)
         {
-            _Files.TryRemove(e.FullPath, out _);
-            FileDeleted?.Invoke(this, e);
+            ErrorOccurred?.Invoke(_watcher.Path, ex);
         }
+    }
 
-        private void OnRenamed(object sender, RenamedEventArgs e)
+    private async void OnChanged(object sender, FileSystemEventArgs e)
+    {
+        try
         {
-            bool res = _Files.TryGetValue(e.OldFullPath, out LocalFile? file);
-            var newLength = GetFileLength(e.FullPath);
-            if (newLength != -1 && res && file != null)
+            await _debounceSemaphore.WaitAsync();
+            await ProcessChangeEventAsync(e.FullPath);
+        }
+        catch (Exception ex)
+        {
+            ErrorOccurred?.Invoke(e.FullPath, ex);
+        }
+        finally
+        {
+            try
             {
-                file.Path = e.FullPath;
-                file.LastLength = newLength;
+                _debounceSemaphore?.Release();
             }
-            FileMoved?.Invoke(this, e);
+            catch (ObjectDisposedException)
+            {
+                // Semaphore was disposed; no action needed
+            }
+        }
+    }
+
+    private async Task ProcessChangeEventAsync(string fullPath)
+    {
+        var lastWriteTime = File.GetLastWriteTimeUtc(fullPath);
+        if (_fileStates.TryGetValue(fullPath, out var currentState) &&
+            currentState.LastWriteTime == lastWriteTime)
+        {
+            return;
         }
 
-        private void OnChanged(object sender, FileSystemEventArgs e)
+        await Task.Delay(_debounceDelay);
+
+        var newLastWriteTime = File.GetLastWriteTimeUtc(fullPath);
+        if (newLastWriteTime != lastWriteTime)
         {
-            long newLength = GetFileLength(e.FullPath);
-            if (newLength == -1) return;
+            return;
+        }
 
-            bool isAppend = false;
-            _Files.AddOrUpdate(e.FullPath,
-                new LocalFile { Path = e.FullPath, LastLength = newLength, dataSource = source },
-                (path, file) =>
+        ProcessFileChange(fullPath);
+    }
+
+    private void ProcessFileChange(string fullPath)
+    {
+        try
+        {
+            var fileInfo = new FileInfo(fullPath);
+            if (!fileInfo.Exists)
+                return;
+
+            var newLength = fileInfo.Length;
+            var newLastWriteTime = fileInfo.LastWriteTimeUtc;
+
+            _fileStates.AddOrUpdate(fullPath,
+                _ =>
                 {
-                    var oldMax = file.LastLength;
-
-                    if (newLength > oldMax)
+                    // This is a new file entry, trigger FileCreated
+                    FileCreated?.Invoke(fullPath, newLength);
+                    return new FileState { Length = newLength, LastWriteTime = newLastWriteTime };
+                },
+                (path, oldState) =>
+                {
+                    if (newLength > oldState.Length)
                     {
-                        isAppend = true;
-                        file.LastLength = newLength;
-                        return file;
+                        FileAppended?.Invoke(path, newLength);
                     }
-                    return file;
+                    else if (newLength < oldState.Length)
+                    {
+                        FileTruncated?.Invoke(path, newLength);
+                    }
+                    return new FileState { Length = newLength, LastWriteTime = newLastWriteTime };
                 });
+        }
+        catch (Exception ex)
+        {
+            ErrorOccurred?.Invoke(fullPath, ex);
+        }
+    }
 
-            if (isAppend)
+    private async void OnCreated(object sender, FileSystemEventArgs e)
+    {
+        try
+        {
+            await WaitForFileRelease(e.FullPath);
+            ProcessFileChange(e.FullPath);
+        }
+        catch (Exception ex)
+        {
+            ErrorOccurred?.Invoke(e.FullPath, ex);
+        }
+    }
+
+    private void OnDeleted(object sender, FileSystemEventArgs e)
+    {
+        try
+        {
+            _fileStates.TryRemove(e.FullPath, out _);
+            FileDeleted?.Invoke(e.FullPath);
+        }
+        catch (Exception ex)
+        {
+            ErrorOccurred?.Invoke(e.FullPath, ex);
+        }
+    }
+
+    private void OnRenamed(object sender, RenamedEventArgs e)
+    {
+        try
+        {
+            if (!IsPathInWatchedDirectory(e.FullPath))
             {
-                FileAppended?.Invoke(this, e);
+                OnDeleted(sender, new FileSystemEventArgs(WatcherChangeTypes.Deleted,
+                    Path.GetDirectoryName(e.OldFullPath)!,
+                    Path.GetFileName(e.OldFullPath)));
+                return;
+            }
+
+            _fileStates.TryRemove(e.OldFullPath, out _);
+            ProcessFileChange(e.FullPath);
+            FileMoved?.Invoke(e.OldFullPath, e.FullPath);
+        }
+        catch (Exception ex)
+        {
+            ErrorOccurred?.Invoke(e.OldFullPath, ex);
+        }
+    }
+
+    private bool IsPathInWatchedDirectory(string path)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            var watchedPath = Path.GetFullPath(_watcher.Path);
+            return fullPath.StartsWith(watchedPath, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task WaitForFileRelease(string path, int timeout = 2000)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.Elapsed < TimeSpan.FromMilliseconds(timeout))
+        {
+            try
+            {
+                using var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                return; // File is available
+            }
+            catch (IOException) when (stopwatch.Elapsed < TimeSpan.FromMilliseconds(timeout))
+            {
+                await Task.Delay(50);
             }
         }
+        throw new IOException($"File {path} remained locked after {timeout}ms");
+    }
 
-        private static long GetFileLength(string path)
-        {
-            const int maxRetries = 3;
-            const int delayMs = 100;
+    private void OnWatcherError(object sender, ErrorEventArgs e)
+    {
+        ErrorOccurred?.Invoke(_watcher.Path, e.GetException());
+    }
+    public void Dispose()
+    {
+        _watcher.EnableRaisingEvents = false;
+        _watcher.Created -= OnCreated;
+        _watcher.Deleted -= OnDeleted;
+        _watcher.Renamed -= OnRenamed;
+        _watcher.Changed -= OnChanged;
+        _watcher.Error -= OnWatcherError;
+        _watcher.Dispose();
+        _debounceSemaphore.Dispose();
+    }
 
-            for (int i = 0; i < maxRetries; i++)
-            {
-                try
-                {
-                    var fileInfo = new FileInfo(path);
-                    return fileInfo.Exists ? fileInfo.Length : -1;
-                }
-                catch (IOException)
-                {
-                    Thread.Sleep(delayMs);
-                }
-                catch (Exception)
-                {
-                    return -1;
-                }
-            }
-            return -1;
-        }
-
-        public void Dispose()
-        {
-            _watcher.Dispose();
-            GC.SuppressFinalize(this);
-        }
+    private class FileState
+    {
+        public long Length { get; set; }
+        public DateTime LastWriteTime { get; set; }
     }
 }
