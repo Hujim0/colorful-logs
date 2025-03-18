@@ -413,39 +413,39 @@ public class FileWatcherTests : IAsyncLifetime
     // }
 
 
-    private async Task PerformAtomicMove(string source, string dest, CancellationToken ct = default)
-    {
-        const int moveAttempts = 3;
-        for (int i = 0; i < moveAttempts; i++)
-        {
-            try
-            {
-                File.Move(source, dest);
-                return;
-            }
-            catch (IOException) when (i < moveAttempts - 1)
-            {
-                await Task.Delay(200 * (i + 1), ct);
-                await EnsureFileUnlocked(source, 3, 100, ct);
-            }
-        }
-    }
+    // private async Task PerformAtomicMove(string source, string dest, CancellationToken ct = default)
+    // {
+    //     const int moveAttempts = 3;
+    //     for (int i = 0; i < moveAttempts; i++)
+    //     {
+    //         try
+    //         {
+    //             File.Move(source, dest);
+    //             return;
+    //         }
+    //         catch (IOException) when (i < moveAttempts - 1)
+    //         {
+    //             await Task.Delay(200 * (i + 1), ct);
+    //             await EnsureFileUnlocked(source, 3, 100, ct);
+    //         }
+    //     }
+    // }
 
-    private async Task EnsureFileUnlocked(string path, int maxRetries, int delayMs, CancellationToken ct)
-    {
-        for (int i = 0; i < maxRetries; i++)
-        {
-            try
-            {
-                using var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None);
-                return;
-            }
-            catch (IOException) when (i < maxRetries - 1)
-            {
-                await Task.Delay(delayMs * (i + 1), ct);
-            }
-        }
-    }
+    // private async Task EnsureFileUnlocked(string path, int maxRetries, int delayMs, CancellationToken ct)
+    // {
+    //     for (int i = 0; i < maxRetries; i++)
+    //     {
+    //         try
+    //         {
+    //             using var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None);
+    //             return;
+    //         }
+    //         catch (IOException) when (i < maxRetries - 1)
+    //         {
+    //             await Task.Delay(delayMs * (i + 1), ct);
+    //         }
+    //     }
+    // }
 
     [Fact]
     public async Task Appended_Utf8File_TriggersFileAppendedEvent()
