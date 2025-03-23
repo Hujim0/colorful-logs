@@ -247,6 +247,101 @@ namespace consoleAppTest.Tests
             //should not match "#3422"
             Assert.Single(portMatches);
         }
+        // New test for HTTP methods
+        [Fact]
+        public void ShouldMatchHttpMethods()
+        {
+            // Arrange
+            var getPattern = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "HTTP GET",
+                SyntaxString = @"\bGET\b",
+                Components = []
+            };
+            var postPattern = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "HTTP POST",
+                SyntaxString = @"\bPOST\b",
+                Components = []
+            };
+            var headPattern = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "HTTP HEAD",
+                SyntaxString = @"\bHEAD\b",
+                Components = []
+            };
+            var optionsPattern = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "HTTP OPTIONS",
+                SyntaxString = @"\bOPTIONS\b",
+                Components = []
+            };
+
+            var httpMethodPattern = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "HTTP Method",
+                SyntaxString = "$http_get|$http_post|$http_head|$http_options",
+                Components = [],
+            };
+            httpMethodPattern.Components =
+            [
+                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_get", ChildPattern = getPattern },
+                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_post", ChildPattern = postPattern },
+                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_head", ChildPattern = headPattern },
+                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_options", ChildPattern = optionsPattern }
+            ];
+
+            var matcher = new PatternMatcher([httpMethodPattern], new PatternCompiler());
+            var line = new IndexedLine
+            {
+                LineText = "GET /api/data HTTP/1.1",
+                LineNumber = 1
+            };
+
+            // Act
+            var results = matcher.ProcessLine(line);
+
+            // Assert
+            var matches = results.Where(m => m.Pattern.Id == httpMethodPattern.Id).ToList();
+            Assert.Single(matches);
+            Assert.Equal("GET", matches[0].Value);
+            Assert.Equal(0, matches[0].TagInstances[0].StartIndex);
+            Assert.Equal(3, matches[0].TagInstances[0].Length);
+        }
+
+        // New test to ensure ports aren't matched standalone
+        [Fact]
+        public void ShouldNotMatchStandalonePort()
+        {
+            // Arrange
+            var addressPattern = CreateAddressPattern();
+            var portPattern = CreatePortPattern();
+            var addressPortPattern = CreateAddressPortPattern(addressPattern, portPattern);
+
+            // Only include composite patterns, not standalone port
+            var matcher = new PatternMatcher([addressPattern, addressPortPattern], new PatternCompiler());
+            var line = new IndexedLine
+            {
+                LineText = "Invalid port: 8080",
+                LineNumber = 1
+            };
+
+            // Act
+            var results = matcher.ProcessLine(line);
+
+            // Assert
+            var portMatches = results.Where(m => m.Pattern.Id == portPattern.Id).ToList();
+            Assert.Empty(portMatches); // Port shouldn't match when not part of address:port
+
+            // Verify address:port pattern doesn't match invalid format
+            var addressPortMatches = results.Where(m => m.Pattern.Id == addressPortPattern.Id).ToList();
+            Assert.Empty(addressPortMatches);
+        }
     }
 }
 
