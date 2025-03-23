@@ -1,105 +1,149 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using consoleAppTest.fileWatcher;
 using consoleAppTest.structs;
 
-namespace consoleAppTest.fileWatcher
+public class LocalFileManager
 {
-    public class LocalFileManager
+    public event Action<IndexedLine>? OnLineIndexed;
+
+    private readonly Dictionary<string, LocalFile> _localFiles = new Dictionary<string, LocalFile>();
+    private readonly DataSource _dataSource;
+
+    public LocalFileManager(FileWatcher fileWatcher, DataSource dataSource)
     {
-        private readonly Dictionary<string, LocalFile> _localFiles = [];
-        private readonly DataSource _dataSource;
+        _dataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));
 
-        public LocalFileManager(FileWatcher fileWatcher, DataSource dataSource)
+        fileWatcher.FileCreated += HandleFileCreated;
+        fileWatcher.FileDeleted += HandleFileDeleted;
+        fileWatcher.FileAppended += HandleFileAppended;
+        fileWatcher.FileTruncated += HandleFileTruncated;
+        fileWatcher.FileMoved += HandleFileMoved;
+        fileWatcher.ErrorOccurred += HandleErrorOccurred;
+    }
+
+    private void HandleFileCreated(string path, long length)
+    {
+        if (!_localFiles.ContainsKey(path))
         {
-            _dataSource = dataSource;
-
-            fileWatcher.FileCreated += HandleFileCreated;
-            fileWatcher.FileDeleted += HandleFileDeleted;
-            fileWatcher.FileAppended += HandleFileAppended;
-            fileWatcher.FileTruncated += HandleFileTruncated;
-            fileWatcher.FileMoved += HandleFileMoved;
-            fileWatcher.ErrorOccurred += HandleErrorOccurred;
-        }
-
-        private void HandleFileCreated(string path, long length)
-        {
-            if (!_localFiles.ContainsKey(path))
+            var localFile = new LocalFile
             {
-                var localFile = new LocalFile
-                {
-                    Id = Guid.NewGuid(),
-                    Path = path,
-                    LastLength = length,
-                    dataSource = _dataSource
-                };
+                Id = Guid.NewGuid(),
+                Path = path,
+                LastLength = length,
+                dataSource = _dataSource,
+                LastLineNumber = 0,
+                PendingLine = ""
+            };
 
-                _localFiles.Add(path, localFile);
-                Console.WriteLine($"Created: {path} (Length: {length})");
-            }
-        }
+            _localFiles.Add(path, localFile);
 
-        private void HandleFileDeleted(string path)
-        {
-            if (_localFiles.Remove(path))
+            if (length > 0)
             {
-                Console.WriteLine($"Deleted: {path}");
+                ProcessFileContent(localFile, 0, length);
             }
-        }
 
-        private void HandleFileAppended(string path, long newLength)
-        {
-            if (_localFiles.TryGetValue(path, out LocalFile? file))
-            {
-                try
-                {
-                    long previousLength = file.LastLength;
-                    if (newLength > previousLength)
-                    {
-                        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-                        stream.Seek(previousLength, SeekOrigin.Begin);
-                        byte[] buffer = new byte[newLength - previousLength];
-                        int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                        string newContent = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        Console.WriteLine($"Appended to {path}: {newContent}");
-                    }
-                    file.LastLength = newLength;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error reading append for {path}: {ex.Message}");
-                }
-            }
+            Console.WriteLine($"Created: {path} (Length: {length})");
         }
+    }
 
-        private void HandleFileTruncated(string path, long newLength)
+    private void HandleFileAppended(string path, long newLength)
+    {
+        if (_localFiles.TryGetValue(path, out LocalFile? file))
         {
-            if (_localFiles.TryGetValue(path, out LocalFile? file))
+            try
             {
                 long previousLength = file.LastLength;
-                if (newLength < previousLength)
+                if (newLength > previousLength)
                 {
-                    Console.WriteLine($"Truncated: {path} by {previousLength - newLength} bytes, now its not indexed at all");
+                    ProcessFileContent(file, previousLength, newLength);
                 }
-                file.LastLength = 0;
+                file.LastLength = newLength;
             }
-        }
-
-        private void HandleFileMoved(string oldPath, string newPath)
-        {
-            if (_localFiles.TryGetValue(oldPath, out LocalFile? file))
+            catch (Exception ex)
             {
-                _localFiles.Remove(oldPath);
-                file.Path = newPath;
-                _localFiles.Add(newPath, file);
-                Console.WriteLine($"Moved: {oldPath} => {newPath}");
+                Console.WriteLine($"Error reading append for {path}: {ex.Message}");
             }
         }
+    }
 
-        private void HandleErrorOccurred(string path, Exception ex)
+    private void ProcessFileContent(LocalFile file, long start, long end)
+    {
+        using var stream = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
+        stream.Seek(start, SeekOrigin.Begin);
+
+        byte[] buffer = new byte[end - start];
+        int bytesRead = stream.Read(buffer, 0, buffer.Length);
+        string newContent = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+        // Combine with pending line from previous appends
+        string fullContent = file.PendingLine + newContent;
+        string[] lines = fullContent.Split('\n');
+
+        // Determine complete lines to process
+        int completeLines = lines.Length - 1;
+        bool endsWithNewLine = newContent.EndsWith('\n');
+
+        for (int i = 0; i < completeLines; i++)
         {
-            Console.WriteLine($"Error [{path}]: {ex.GetType().Name} - {ex.Message}");
+            file.LastLineNumber++;
+            var indexedLine = new IndexedLine
+            {
+                Id = Guid.NewGuid(),
+                Source = _dataSource,
+                LineText = lines[i].TrimEnd('\r'),  // Handle CRLF
+                LineNumber = (ulong)file.LastLineNumber
+            };
+
+            OnLineIndexed?.Invoke(indexedLine);
+        }
+
+        // Update pending line
+        file.PendingLine = endsWithNewLine ? "" : lines.Last();
+    }
+
+    private void HandleFileTruncated(string path, long newLength)
+    {
+        if (_localFiles.TryGetValue(path, out LocalFile? file))
+        {
+            // Reset tracking state
+            file.LastLength = 0;
+            file.LastLineNumber = 0;
+            file.PendingLine = "";
+
+            // Process the new content from scratch
+            if (newLength > 0)
+            {
+                ProcessFileContent(file, 0, newLength);
+                file.LastLength = newLength;
+            }
+
+            Console.WriteLine($"Truncated: {path} (Reset to {newLength} bytes)");
+        }
+    }
+
+    private void HandleFileMoved(string oldPath, string newPath)
+    {
+        if (_localFiles.TryGetValue(oldPath, out LocalFile? file))
+        {
+            _localFiles.Remove(oldPath);
+            file.Path = newPath;
+            _localFiles.Add(newPath, file);
+            Console.WriteLine($"Moved: {oldPath} => {newPath}");
+        }
+    }
+    private void HandleErrorOccurred(string path, Exception ex)
+    {
+        Console.WriteLine($"Error [{path}]: {ex.GetType().Name} - {ex.Message}");
+    }
+    private void HandleFileDeleted(string path)
+    {
+        if (_localFiles.Remove(path))
+        {
+            Console.WriteLine($"Deleted: {path}");
         }
     }
 }

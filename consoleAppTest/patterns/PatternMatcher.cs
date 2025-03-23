@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using consoleAppTest.patterns;
 using consoleAppTest.structs;
 
 namespace consoleAppTest.database
@@ -9,9 +10,9 @@ namespace consoleAppTest.database
         private List<Pattern> _processingOrder;
         private Dictionary<Guid, Regex> _compiledRegexes;
 
-        public PatternMatcher(List<Pattern> patterns)
+        public PatternMatcher(List<Pattern> patterns, IPatternCompiler patternCompiler)
         {
-            var (compiledRegexes, sortedPatterns) = PatternCompiler.CompilePatterns(patterns);
+            var (compiledRegexes, sortedPatterns) = patternCompiler.CompilePatterns(patterns);
             _compiledRegexes = compiledRegexes.ToDictionary(
                 kvp => kvp.Key,
                 kvp => new Regex(kvp.Value, RegexOptions.Compiled));

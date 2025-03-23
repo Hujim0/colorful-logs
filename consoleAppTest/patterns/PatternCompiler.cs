@@ -1,10 +1,11 @@
 using System.Text.RegularExpressions;
+using consoleAppTest.patterns;
 
 namespace consoleAppTest.structs
 {
-    public static class PatternCompiler
+    public class PatternCompiler : IPatternCompiler
     {
-        public static (Dictionary<Guid, string> ResolvedRegexes, List<Pattern> SortedPatterns) CompilePatterns(List<Pattern> patterns)
+        public (Dictionary<Guid, string> ResolvedRegexes, List<Pattern> SortedPatterns) CompilePatterns(List<Pattern> patterns)
         {
             var resolvedRegexes = new Dictionary<Guid, string>();
             var placeholderMappings = new Dictionary<Guid, Dictionary<string, Pattern>>();
@@ -33,7 +34,7 @@ namespace consoleAppTest.structs
             return (resolvedRegexes, sortedPatterns);
         }
 
-        private static void CompilePattern(
+        public void CompilePattern(
             Pattern pattern,
             Dictionary<Guid, string> compiledRegexes,
             Dictionary<Guid, Dictionary<string, Pattern>> placeholderMappings,

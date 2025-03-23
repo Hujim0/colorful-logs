@@ -12,5 +12,7 @@ namespace consoleAppTest.structs
         public byte[] LastHash { get; set; } = new byte[20];
         public long LastLength { get; set; } = 0;
         public required DataSource dataSource;
+        public string PendingLine { get; set; } = "";
+        public long LastLineNumber;
     }
 }

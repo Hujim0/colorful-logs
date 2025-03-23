@@ -57,7 +57,8 @@ namespace consoleAppTest.Tests
             return pattern;
         }
 
-        private static Pattern CreateResourcePattern() {
+        private static Pattern CreateResourcePattern()
+        {
             return new Pattern
             {
                 Id = Guid.NewGuid(),
@@ -93,7 +94,7 @@ namespace consoleAppTest.Tests
             var resource = CreateResourcePattern();
 
             var patterns = new List<Pattern> { address, port, addressPort, resource };
-            var matcher = new PatternMatcher(patterns);
+            var matcher = new PatternMatcher(patterns, new PatternCompiler());
 
             var startIndex = "Server at ".Length;
             var length = "192.168.1.1:8080".Length;
@@ -127,8 +128,8 @@ namespace consoleAppTest.Tests
             Assert.Equal("192.168.1.1:8080".Length, computedLength);
 
             Assert.Equal("Server at 192.168.1.1:8080", line.LineText);
-            Assert.Equal(line.LineText[computedStartIndex..(computedStartIndex+computedLength)], mainAddressPort.Value);
-            Assert.Equal(line.LineText.Substring(computedStartIndex,computedLength), mainAddressPort.Value);
+            Assert.Equal(line.LineText[computedStartIndex..(computedStartIndex + computedLength)], mainAddressPort.Value);
+            Assert.Equal(line.LineText.Substring(computedStartIndex, computedLength), mainAddressPort.Value);
 
         }
 
@@ -142,7 +143,7 @@ namespace consoleAppTest.Tests
 
             var urlPattern = CreateUrlPattern(address, port, resource);
             var patterns = new List<Pattern> { address, port, resource, urlPattern };
-            var matcher = new PatternMatcher(patterns);
+            var matcher = new PatternMatcher(patterns, new PatternCompiler());
 
             var line = new IndexedLine
             {
@@ -181,7 +182,7 @@ namespace consoleAppTest.Tests
             var port = CreatePortPattern();
             var addressPort = CreateAddressPortPattern(address, port);
             var patterns = new List<Pattern> { address, port, addressPort };
-            var matcher = new PatternMatcher(patterns);
+            var matcher = new PatternMatcher(patterns, new PatternCompiler());
 
             var line = new IndexedLine
             {
@@ -212,3 +213,7 @@ namespace consoleAppTest.Tests
         }
     }
 }
+
+//should add a test case with for example
+//patterns "GET", "POST", "OPTIONS", "HEAD"
+//Pattern HTTP method with "$http_get|$http_post|$http_head|$http_options"
