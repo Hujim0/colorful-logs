@@ -211,9 +211,42 @@ namespace consoleAppTest.Tests
             Assert.Equal("10.0.0.1:443".Length, secondMatch.TagInstances.First().Length);
             Assert.Equal(startSecondIp, secondMatch.TagInstances.First().StartIndex);
         }
+
+        [Fact]
+        public void ShouldNotMatchNotAddedPatterns()
+        {
+            // Arrange
+            var address = CreateAddressPattern();
+            var port = CreatePortPattern();
+            var resource = CreateResourcePattern();
+
+            var urlPattern = CreateUrlPattern(address, port, resource);
+
+            //removed port from it
+            var patterns = new List<Pattern> { address, resource, urlPattern };
+            var matcher = new PatternMatcher(patterns, new PatternCompiler());
+
+            var line = new IndexedLine
+            {
+                LineText = "Request #3422 to https://10.0.0.1:8080/api/v1/users",
+                LineNumber = 1
+            };
+
+            // Act
+            var results = matcher.ProcessLine(line);
+
+            // Assert
+            var urlMatches = results.Where(iv => iv.Pattern.Id == urlPattern.Id).ToList();
+            var resourceMatches = results.Where(iv => iv.Pattern.Id == resource.Id).ToList();
+            var portMatches = results.Where(iv => iv.Pattern.Id == port.Id).ToList();
+
+
+            // Verify full URL match
+            Assert.Single(urlMatches);
+            Assert.Single(resourceMatches);
+            //should not match "#3422"
+            Assert.Single(portMatches);
+        }
     }
 }
 
-//should add a test case with for example
-//patterns "GET", "POST", "OPTIONS", "HEAD"
-//Pattern HTTP method with "$http_get|$http_post|$http_head|$http_options"

@@ -1,5 +1,8 @@
 using System.Text.RegularExpressions;
 using consoleAppTest.patterns;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace consoleAppTest.structs
 {
@@ -10,15 +13,31 @@ namespace consoleAppTest.structs
             var resolvedRegexes = new Dictionary<Guid, string>();
             var placeholderMappings = new Dictionary<Guid, Dictionary<string, Pattern>>();
 
+            // Collect all patterns referenced by the provided patterns, including children recursively
+            var allPatterns = new HashSet<Pattern>(patterns);
+            var queue = new Queue<Pattern>(patterns);
+            while (queue.Count > 0)
+            {
+                var currentPattern = queue.Dequeue();
+                foreach (var component in currentPattern.Components)
+                {
+                    var childPattern = component.ChildPattern;
+                    if (allPatterns.Add(childPattern))
+                    {
+                        queue.Enqueue(childPattern);
+                    }
+                }
+            }
+
             // Preprocess each pattern to map PlaceholderName to ChildPattern
-            foreach (var pattern in patterns)
+            foreach (var pattern in allPatterns)
             {
                 var componentNameToPattern = pattern.Components.ToDictionary(c => c.PlaceholderName, c => c.ChildPattern);
                 placeholderMappings[pattern.Id] = componentNameToPattern;
             }
 
-            // Compile each pattern, handling dependencies and cycles
-            foreach (var pattern in patterns)
+            // Compile each pattern in allPatterns
+            foreach (var pattern in allPatterns)
             {
                 if (!resolvedRegexes.ContainsKey(pattern.Id))
                 {
@@ -26,7 +45,7 @@ namespace consoleAppTest.structs
                 }
             }
 
-            // Sort the patterns by regex length descending
+            // Sort the provided patterns by regex length descending
             var sortedPatterns = patterns
                 .OrderByDescending(pattern => resolvedRegexes[pattern.Id].Length)
                 .ToList();
