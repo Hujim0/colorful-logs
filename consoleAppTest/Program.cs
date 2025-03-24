@@ -1,5 +1,4 @@
-﻿using consoleAppTest.database;
-using consoleAppTest.fileWatcher;
+﻿using consoleAppTest.fileWatcher;
 using consoleAppTest.patterns;
 using consoleAppTest.structs;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -63,7 +62,7 @@ var watcher = new FileWatcher("watcher_folder/", debounceDelay, trackInitialFile
 
 // addDebugHooksToWatcher(watcher);
 
-PatternMatcher patternMatcher = new(DefaultPatterns.GetDefaultPatterns(), new PatternCompiler());
+PatternMatcher patternMatcher = new(DefaultPatterns.GetLogPatterns(), new PatternCompiler());
 
 DataSource source = new()
 {
@@ -81,7 +80,7 @@ manager.OnLineIndexed += indexedLine =>
 
     foreach (IndexedValue value in values)
     {
-        Console.WriteLine($"new value: {value.Value}");
+        Console.WriteLine($"new value: {value.Value} from {value.Pattern.PatternName}");
     }
 };
 

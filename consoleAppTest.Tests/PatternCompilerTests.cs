@@ -1,4 +1,5 @@
 ﻿using consoleAppTest.structs;
+using Xunit;
 
 namespace consoleAppTest.Tests
 {
@@ -32,15 +33,14 @@ namespace consoleAppTest.Tests
             var childPattern = new Pattern
             {
                 Id = Guid.NewGuid(),
-                PatternName = "patternName",
-
+                PatternName = "childPattern",
                 SyntaxString = @"\d+",
                 Components = []
             };
             var parentPattern = new Pattern
             {
                 Id = Guid.NewGuid(),
-                PatternName = "patternName",
+                PatternName = "parentPattern",
                 SyntaxString = @"$child",
                 Components = []
             };
@@ -55,8 +55,8 @@ namespace consoleAppTest.Tests
             // Act
             var (ResolvedRegexes, SortedPatterns) = new PatternCompiler().CompilePatterns(patterns);
 
-            // Assert
-            Assert.Equal(@"\d+", ResolvedRegexes[parentPattern.Id]);
+            // Assert: Parent regex should have named group for "child"
+            Assert.Equal(@"(?<child>\d+)", ResolvedRegexes[parentPattern.Id]);
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace consoleAppTest.Tests
             {
                 Id = Guid.NewGuid(),
                 SyntaxString = "$C",
-                PatternName = "patternName",
+                PatternName = "patternB",
                 Components = []
             };
             patternB.Components.Add(new PatternComponent
@@ -89,7 +89,7 @@ namespace consoleAppTest.Tests
             {
                 Id = Guid.NewGuid(),
                 SyntaxString = "$B",
-                PatternName = "patternName",
+                PatternName = "patternA",
                 Components = []
             };
             patternA.Components.Add(new PatternComponent
@@ -103,8 +103,8 @@ namespace consoleAppTest.Tests
             // Act
             var (ResolvedRegexes, SortedPatterns) = new PatternCompiler().CompilePatterns(patterns);
 
-            // Assert
-            Assert.Equal("C", ResolvedRegexes[patternA.Id]);
+            // Assert: Nested named groups should be present
+            Assert.Equal("(?<B>(?<C>C))", ResolvedRegexes[patternA.Id]);
         }
 
         [Fact]
@@ -114,14 +114,14 @@ namespace consoleAppTest.Tests
             var patternA = new Pattern
             {
                 Id = Guid.NewGuid(),
-                PatternName = "",
+                PatternName = "patternA",
                 SyntaxString = "$B",
                 Components = []
             };
             var patternB = new Pattern
             {
                 Id = Guid.NewGuid(),
-                PatternName = "",
+                PatternName = "patternB",
                 SyntaxString = "$A",
                 Components = []
             };
@@ -166,67 +166,36 @@ namespace consoleAppTest.Tests
         }
 
         [Fact]
-        public void CompilePatterns_PlaceholderOrder_LongestFirst()
-        {
-            // Arrange
-            var childIp = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "",
-                SyntaxString = "a",
-                Components = []
-            };
-            var childIpAddress = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "",
-                SyntaxString = "b",
-                Components = []
-            };
-            var parent = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "",
-                SyntaxString = "$ip$ipaddress",
-                Components = []
-            };
-            parent.Components.Add(new PatternComponent { PlaceholderName = "ip", ChildPattern = childIp, ParentPattern = parent });
-            parent.Components.Add(new PatternComponent { PlaceholderName = "ipaddress", ChildPattern = childIpAddress, ParentPattern = parent });
-            var patterns = new List<Pattern> { parent, childIp, childIpAddress };
-
-            // Act
-            var (ResolvedRegexes, SortedPatterns) = new PatternCompiler().CompilePatterns(patterns);
-
-            // Assert
-            Assert.Equal("ab", ResolvedRegexes[parent.Id]);
-        }
-
-        [Fact]
-        public void CompilePatterns_PlaceholderWithSpecialCharacters_ReplacesCorrectly()
+        public void CompilePatterns_ValidPlaceholderNameWithUnderscore_ReplacesCorrectly()
         {
             // Arrange
             var child = new Pattern
             {
                 Id = Guid.NewGuid(),
-                PatternName = "",
+                PatternName = "child",
                 SyntaxString = "b",
-                Components = new List<PatternComponent>()
+                Components = []
             };
             var parent = new Pattern
             {
                 Id = Guid.NewGuid(),
-                PatternName = "",
-                SyntaxString = "$a+",
-                Components = new List<PatternComponent>()
+                PatternName = "parent",
+                SyntaxString = "$a_plus",
+                Components = []
             };
-            parent.Components.Add(new PatternComponent { PlaceholderName = "a+", ChildPattern = child, ParentPattern = parent });
+            parent.Components.Add(new PatternComponent
+            {
+                PlaceholderName = "a_plus",
+                ChildPattern = child,
+                ParentPattern = parent
+            });
             var patterns = new List<Pattern> { parent, child };
 
             // Act
             var (ResolvedRegexes, SortedPatterns) = new PatternCompiler().CompilePatterns(patterns);
 
-            // Assert
-            Assert.Equal("b", ResolvedRegexes[parent.Id]);
+            // Assert: Named group with valid name "a_plus"
+            Assert.Equal("(?<a_plus>b)", ResolvedRegexes[parent.Id]);
         }
 
         [Fact]
@@ -236,7 +205,7 @@ namespace consoleAppTest.Tests
             var parent = new Pattern
             {
                 Id = Guid.NewGuid(),
-                PatternName = "patternName",
+                PatternName = "parent",
                 SyntaxString = "$unknown",
                 Components = []
             };
@@ -248,5 +217,92 @@ namespace consoleAppTest.Tests
             // Assert
             Assert.Equal("$unknown", ResolvedRegexes[parent.Id]);
         }
+
+        // New test to verify multiple placeholders in the same pattern
+        [Fact]
+        public void CompilePatterns_MultiplePlaceholders_GeneratesNamedGroups()
+        {
+            // Arrange
+            var child1 = new Pattern { Id = Guid.NewGuid(), PatternName = "name", SyntaxString = "1" };
+            var child2 = new Pattern { Id = Guid.NewGuid(), PatternName = "name", SyntaxString = "2" };
+            var parent = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "name",
+                SyntaxString = "$a$b",
+                Components = []
+            };
+            parent.Components = [
+                    new() {ParentPattern = parent, PlaceholderName = "a", ChildPattern = child1 },
+                    new() {ParentPattern = parent, PlaceholderName = "b", ChildPattern = child2 }
+                ];
+
+            var patterns = new List<Pattern> { parent, child1, child2 };
+
+            // Act
+            var (ResolvedRegexes, _) = new PatternCompiler().CompilePatterns(patterns);
+
+            // Assert: Both placeholders replaced with named groups
+            Assert.Equal("(?<a>1)(?<b>2)", ResolvedRegexes[parent.Id]);
+        }
+
+        [Fact]
+        public void CompilePatterns_PlaceholderWithRegexSpecialCharacters_EscapesCorrectly()
+        {
+            // Arrange
+            var child = new Pattern { Id = Guid.NewGuid(), PatternName = "name", SyntaxString = @"\d+" };
+            var parent = new Pattern
+            {
+                PatternName = "name",
+                Id = Guid.NewGuid(),
+                SyntaxString = @"$user_input",
+                Components = []
+            };
+            parent.Components = [new() { ParentPattern = parent, PlaceholderName = "user_input", ChildPattern = child }];
+            var patterns = new List<Pattern> { parent, child };
+
+            // Act
+            var (ResolvedRegexes, _) = new PatternCompiler().CompilePatterns(patterns);
+
+            // Assert: Valid placeholder name without special characters
+            Assert.Equal(@"(?<user_input>\d+)", ResolvedRegexes[parent.Id]);
+        }
+
+        [Fact]
+        public void CompilePatterns_PlaceholderOrder_LongestFirst()
+        {
+            // Arrange
+            var childIp = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "childIp",
+                SyntaxString = "a",
+                Components = []
+            };
+            var childIpAddress = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "childIpAddress",
+                SyntaxString = "b",
+                Components = []
+            };
+            var parent = new Pattern
+            {
+                Id = Guid.NewGuid(),
+                PatternName = "parent",
+                SyntaxString = "$ip$ipaddress",
+                Components = []
+            };
+            parent.Components.Add(new PatternComponent { Id = Guid.NewGuid(), PlaceholderName = "ip", ChildPattern = childIp, ParentPattern = parent });
+            parent.Components.Add(new PatternComponent { Id = Guid.NewGuid(), PlaceholderName = "ipaddress", ChildPattern = childIpAddress, ParentPattern = parent });
+            var patterns = new List<Pattern> { parent, childIp, childIpAddress };
+
+            // Act
+            var (ResolvedRegexes, SortedPatterns) = new PatternCompiler().CompilePatterns(patterns);
+
+            Assert.Equal(SortedPatterns, [parent, childIp, childIpAddress]);
+            Assert.Equal("(?<ip>a)(?<ipaddress>b)", ResolvedRegexes[parent.Id]);
+        }
     }
+
 }

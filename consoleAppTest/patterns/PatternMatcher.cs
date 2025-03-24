@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using consoleAppTest.patterns;
 using consoleAppTest.structs;
 
-namespace consoleAppTest.database
+namespace consoleAppTest.patterns
 {
     public class PatternMatcher
     {
@@ -17,7 +16,6 @@ namespace consoleAppTest.database
                 kvp => kvp.Key,
                 kvp => new Regex(kvp.Value, RegexOptions.Compiled));
             _processingOrder = sortedPatterns;
-
         }
 
         public List<IndexedValue> ProcessLine(IndexedLine line)
@@ -34,7 +32,6 @@ namespace consoleAppTest.database
             List<Pattern> patternsToProcess,
             List<IndexedValue> indexedValues)
         {
-            // Try all patterns in processing order
             foreach (var pattern in patternsToProcess)
             {
                 if (!_compiledRegexes.TryGetValue(pattern.Id, out var regex)) continue;
@@ -71,8 +68,7 @@ namespace consoleAppTest.database
                         );
                     }
 
-                    // Exit after first match to avoid overlapping processing
-                    return;
+                    return; // Exit after first match
                 }
             }
         }
@@ -107,20 +103,29 @@ namespace consoleAppTest.database
             line.TagInstances.Add(tag);
             indexedValues.Add(indexedValue);
 
-            // Process components within the matched text
+            // Process components using NAMED GROUPS instead of the entire match
             if (pattern.Components.Count > 0)
             {
-                var childPatterns = pattern.Components
-                    .Select(c => c.ChildPattern)
-                    .ToList();
+                foreach (var component in pattern.Components)
+                {
+                    string placeholderName = component.PlaceholderName;
+                    Group group = match.Groups[placeholderName];
 
-                ProcessTextSegment(
-                    line,
-                    match.Value,
-                    startInLine,
-                    childPatterns,
-                    indexedValues
-                );
+                    if (group.Success)
+                    {
+                        int groupStartInLine = group.Index;
+                        string groupValue = group.Value;
+
+                        // Process only the child pattern on the captured group's value
+                        ProcessTextSegment(
+                            line,
+                            groupValue,
+                            groupStartInLine,
+                            [component.ChildPattern],
+                            indexedValues
+                        );
+                    }
+                }
             }
         }
     }

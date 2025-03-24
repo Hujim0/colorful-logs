@@ -1,8 +1,6 @@
+
 using System.Text.RegularExpressions;
 using consoleAppTest.patterns;
-using System.Collections.Generic;
-using System.Linq;
-using System;
 
 namespace consoleAppTest.structs
 {
@@ -90,7 +88,8 @@ namespace consoleAppTest.structs
                         }
 
                         var childRegex = compiledRegexes[childPattern.Id];
-                        syntax = Regex.Replace(syntax, $@"\${Regex.Escape(placeholderName)}", childRegex);
+                        // Replace placeholder with a named group capturing the child pattern's regex
+                        syntax = Regex.Replace(syntax, $@"\${Regex.Escape(placeholderName)}", $"(?<{placeholderName}>{childRegex})");
                     }
                 }
 
