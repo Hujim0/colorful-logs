@@ -269,6 +269,69 @@ namespace consoleAppTest.Tests
             var addressPortMatches = results.Where(m => m.Pattern.Id == addressPortPattern.Id).ToList();
             Assert.Empty(addressPortMatches);
         }
+
+        [Fact]
+        public void NginxPatternTests()
+        {
+            // Atomic patterns
+            var ipPattern = DefaultPatterns.CreateAddressPattern();
+            var timestampPattern = DefaultPatterns.CreateTimestampPattern();
+            var httpVersionPattern = DefaultPatterns.CreateHttpVersionPattern();
+            var statusCodePattern = DefaultPatterns.CreateStatusCodePattern();
+            var userAgentPattern = DefaultPatterns.CreateUserAgentPattern();
+            var resourcePattern = DefaultPatterns.CreateResourcePattern();
+
+            // Composite patterns
+            var httpMethodPattern = DefaultPatterns.CreateHttpMethodPattern();
+
+            var fullRequestPattern = DefaultPatterns.CreateFullRequestPattern(
+                httpMethodPattern,
+                resourcePattern,
+                httpVersionPattern);
+
+            var logEntryPattern = DefaultPatterns.CreateLogEntryPattern(
+                ipPattern,
+                timestampPattern,
+                fullRequestPattern,
+                statusCodePattern,
+                userAgentPattern);
+
+            // Only include composite patterns, not standalone port
+            var matcher = new PatternMatcher([
+                ipPattern,
+                timestampPattern,
+                httpMethodPattern,
+                fullRequestPattern,
+                logEntryPattern
+            ], new PatternCompiler());
+            var line = new IndexedLine
+            {
+                LineText = "159.89.16.205 - - [24/Mar/2025:07:17:41 +0300] \"GET /query?q=SHOW+DIAGNOSTICS HTTP/1.1\" 404 162 \"-\" \"Go-http-client/1.1\"",
+                LineNumber = 1
+            };
+
+            // Act
+            var results = matcher.ProcessLine(line);
+
+            var logEntryMatches = results.Where(m => m.Pattern.Id == logEntryPattern.Id).ToList();
+            var ipMatches = results.Where(m => m.Pattern.Id == ipPattern.Id).ToList();
+            var timestampMatches = results.Where(m => m.Pattern.Id == timestampPattern.Id).ToList();
+            var httpMethodMatches = results.Where(m => m.Pattern.Id == httpMethodPattern.Id).ToList();
+            var resourceMatches = results.Where(m => m.Pattern.Id == resourcePattern.Id).ToList();
+            var httpVersionMatches = results.Where(m => m.Pattern.Id == httpVersionPattern.Id).ToList();
+            var statusCodeMatches = results.Where(m => m.Pattern.Id == statusCodePattern.Id).ToList();
+            var userAgentMatches = results.Where(m => m.Pattern.Id == userAgentPattern.Id).ToList();
+
+
+            Assert.Single(logEntryMatches);
+            Assert.Single(ipMatches);
+            Assert.Single(timestampMatches);
+            Assert.Single(httpMethodMatches);
+            Assert.Single(resourceMatches);
+            Assert.Single(httpVersionMatches);
+            Assert.Single(statusCodeMatches);
+            Assert.Single(userAgentMatches);
+        }
     }
 }
 

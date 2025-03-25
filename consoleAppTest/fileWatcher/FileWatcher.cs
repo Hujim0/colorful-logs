@@ -248,5 +248,38 @@ namespace consoleAppTest.fileWatcher
             public long Length { get; set; }
             public DateTime LastWriteTime { get; set; }
         }
+
+        void AddDebugHooksToWatcher()
+        {
+            FileCreated += (path, size) =>
+            {
+                Console.WriteLine($"File was created at {path} with size {size}");
+            };
+
+            FileAppended += (path, new_size) =>
+            {
+                Console.WriteLine($"File was appended at {path} with new size {new_size}");
+            };
+
+            FileDeleted += (path) =>
+            {
+                Console.WriteLine($"File was deleted at {path}");
+            };
+
+            FileMoved += (old_path, new_path) =>
+            {
+                Console.WriteLine($"File was moved from {old_path} to {new_path}");
+            };
+
+            FileTruncated += (path, size) =>
+            {
+                Console.WriteLine($"File was truncated at {path} with new size {size}");
+            };
+
+            ErrorOccurred += (err, ex) =>
+            {
+                Console.WriteLine($"there was an error {err}: {ex}");
+            };
+        }
     }
 }

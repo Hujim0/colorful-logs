@@ -32,7 +32,7 @@ namespace consoleAppTest.patterns
             {
                 Id = Guid.NewGuid(),
                 PatternName = "HTTP Status Code",
-                SyntaxString = @"\b\d{3}\b",
+                SyntaxString = @"\d{3}",
                 Components = []
             };
         }
