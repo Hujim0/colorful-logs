@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,6 +9,9 @@ namespace colorfulLogs.fileWatcher
 {
     public class FileWatcher : IDisposable
     {
+        private readonly List<string> _ignoreMasks;
+        private readonly Regex[] _ignorePatterns;
+
         private readonly FileSystemWatcher _watcher;
         private readonly ConcurrentDictionary<string, FileState> _fileStates;
         private readonly TimeSpan _debounceDelay;
@@ -23,8 +27,16 @@ namespace colorfulLogs.fileWatcher
         public event Action<string, string>? FileMoved;
         public event Action<string, Exception>? ErrorOccurred;
 
-        public FileWatcher(string folderPath, TimeSpan? debounceDelay = null, bool trackInitialFiles = true)
+        public FileWatcher(string folderPath, TimeSpan? debounceDelay = null,
+    bool trackInitialFiles = true, IEnumerable<string>? ignoreFileMasks = null)
         {
+            // Add these lines
+            _ignoreMasks = ignoreFileMasks?.ToList() ?? new List<string>();
+            _ignorePatterns = _ignoreMasks
+                .Select(m => CreateWildcardRegex(m))
+                .ToArray();
+
+
             this.folderPath = folderPath;
             _debounceDelay = debounceDelay ?? TimeSpan.FromMilliseconds(500);
             _trackInitialFiles = trackInitialFiles;
@@ -52,12 +64,45 @@ namespace colorfulLogs.fileWatcher
             }
         }
 
+        private bool ShouldIgnoreFile(string filePath)
+        {
+            // Get relative path from watched directory
+            var relativePath = Path.GetRelativePath(_watcher.Path, filePath);
+
+            // Normalize path separators
+            relativePath = relativePath.Replace(Path.DirectorySeparatorChar, '/');
+
+            foreach (var pattern in _ignorePatterns)
+            {
+                if (pattern.IsMatch(relativePath))
+                    return true;
+            }
+            return false;
+        }
+
+        private static Regex CreateWildcardRegex(string pattern)
+        {
+            pattern = pattern
+                .Replace(Path.DirectorySeparatorChar, '/')
+                .Replace("\\", "/");  // Normalize all separators
+
+            var regexPattern = "^" +
+                Regex.Escape(pattern)
+                    .Replace("\\*\\*", ".*")        // ** for any subdirectory
+                    .Replace("\\*", "[^/]*")        // * for filename portion
+                    .Replace("\\?", ".") + "$";
+
+            return new Regex(regexPattern,
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        }
+
         private void InitializeExistingFiles()
         {
             try
             {
                 foreach (var filePath in Directory.GetFiles(_watcher.Path, "*.*", SearchOption.AllDirectories))
                 {
+                    if (ShouldIgnoreFile(filePath)) continue;
                     var fileInfo = new FileInfo(filePath);
                     _fileStates.TryAdd(filePath, new FileState { Length = fileInfo.Length, LastWriteTime = fileInfo.LastWriteTimeUtc });
                     FileCreated?.Invoke(filePath, fileInfo.Length);
@@ -71,6 +116,7 @@ namespace colorfulLogs.fileWatcher
 
         private async void OnChanged(object sender, FileSystemEventArgs e)
         {
+            if (ShouldIgnoreFile(e.FullPath)) return;
             try
             {
                 await _debounceSemaphore.WaitAsync();
@@ -152,6 +198,8 @@ namespace colorfulLogs.fileWatcher
 
         private async void OnCreated(object sender, FileSystemEventArgs e)
         {
+            if (ShouldIgnoreFile(e.FullPath)) return;
+
             try
             {
                 await WaitForFileRelease(e.FullPath);
@@ -165,6 +213,8 @@ namespace colorfulLogs.fileWatcher
 
         private void OnDeleted(object sender, FileSystemEventArgs e)
         {
+            if (ShouldIgnoreFile(e.FullPath)) return;
+
             try
             {
                 _fileStates.TryRemove(e.FullPath, out _);
@@ -178,6 +228,19 @@ namespace colorfulLogs.fileWatcher
 
         private void OnRenamed(object sender, RenamedEventArgs e)
         {
+            bool oldIgnored = ShouldIgnoreFile(e.OldFullPath);
+            bool newIgnored = ShouldIgnoreFile(e.FullPath);
+
+            if (newIgnored)
+            {
+                if (!oldIgnored)
+                {
+                    _fileStates.TryRemove(e.OldFullPath, out _);
+                    FileDeleted?.Invoke(e.OldFullPath);
+                }
+                return;
+            }
+
             try
             {
                 if (!IsPathInWatchedDirectory(e.FullPath))

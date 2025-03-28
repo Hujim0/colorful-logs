@@ -13,6 +13,12 @@ class Program
     {
         var rootCommand = new RootCommand("Log processing CLI tool with file watching capabilities");
 
+        var ignoreMaskOption = new Option<List<string>>(
+            name: "--ignore-mask",
+            description: "File masks to ignore (e.g., *.tmp, backup/*.log)",
+            getDefaultValue: () => new List<string>());
+        ignoreMaskOption.AddAlias("-i");
+
         var dataSourceOption = new Option<string>(
             name: "--datasource",
             description: "Name of the data source to use",
@@ -34,13 +40,14 @@ class Program
         rootCommand.AddOption(dataSourceOption);
         rootCommand.AddOption(watchDirOption);
         rootCommand.AddOption(dbOption);
-
-        rootCommand.SetHandler(RunLogProcessor, dataSourceOption, watchDirOption, dbOption);
+        rootCommand.AddOption(ignoreMaskOption);
+        rootCommand.SetHandler(RunLogProcessor, dataSourceOption, watchDirOption, dbOption, ignoreMaskOption);
 
         await rootCommand.InvokeAsync(args);
     }
 
-    static async Task RunLogProcessor(string dataSourceName, string watchDirectory, string dbName)
+    static async Task RunLogProcessor(string dataSourceName, string watchDirectory,
+        string dbName, List<string> ignoreMasks)
     {
         // Initialize and seed the database
         using (var context = new DataContext(dbName))
@@ -85,7 +92,13 @@ class Program
         }
 
         var debounceDelay = TimeSpan.FromMilliseconds(100);
-        var watcher = new FileWatcher(watchDirectory, debounceDelay, trackInitialFiles: false);
+        var watcher = new FileWatcher(
+            watchDirectory,
+            debounceDelay: debounceDelay,
+            trackInitialFiles: false,
+            ignoreFileMasks: ignoreMasks
+        );
+
 
         var manager = new LocalFileManager(
             fileWatcher: watcher,
