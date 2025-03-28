@@ -1,7 +1,7 @@
-﻿using consoleAppTest.structs;
+﻿using colorfulLogs.structs;
 using Xunit;
 
-namespace consoleAppTest.Tests
+namespace colorfulLogs.Tests
 {
     public class PatternCompilerTests
     {

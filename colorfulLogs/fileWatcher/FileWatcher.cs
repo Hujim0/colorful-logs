@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace consoleAppTest.fileWatcher
+namespace colorfulLogs.fileWatcher
 {
     public class FileWatcher : IDisposable
     {

@@ -1,6 +1,7 @@
-﻿using consoleAppTest.fileWatcher;
-using consoleAppTest.patterns;
-using consoleAppTest.structs;
+﻿using colorfulLogs.fileWatcher;
+using colorfulLogs.indexTask;
+using colorfulLogs.patterns;
+using colorfulLogs.structs;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 Console.WriteLine("Hello, World!");
@@ -38,18 +39,24 @@ DataSource source = new()
 };
 
 LocalFileManager manager = new(fileWatcher: watcher, source);
+int processorCount = Environment.ProcessorCount;
+PriorityTaskScheduler taskScheduler = new(processorCount/2, processorCount/2);
 
-manager.OnLineIndexed += indexedLine =>
+manager.OnLinesToIndex += indexedLine =>
 {
-    // Send to other systems or store in database
-    Console.WriteLine($"Line {indexedLine.LineNumber}: {indexedLine.LineText}");
+    taskScheduler.QueueTask(new IndexTask() {
+        Work = () => {
+            Console.WriteLine($"Line {indexedLine.LineNumber}: {indexedLine.LineText}");
 
-    var values = patternMatcher.ProcessLine(indexedLine);
+            var values = patternMatcher.ProcessLine(indexedLine);
+            // Send to other systems or store in database
 
-    foreach (IndexedValue value in values)
-    {
-        Console.WriteLine($"new value: {value.Value} from {value.Pattern.PatternName}");
-    }
+            foreach (IndexedValue value in values)
+            {
+                Console.WriteLine($"new value: {value.Value} from {value.Pattern.PatternName}");
+            }
+        }
+    });
 };
 
 Console.In.Read();

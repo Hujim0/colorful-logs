@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace consoleAppTest.structs
+namespace colorfulLogs.structs
 {
     public class TagInstance
     {

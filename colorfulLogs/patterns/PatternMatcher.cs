@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using consoleAppTest.structs;
+using colorfulLogs.structs;
 
-namespace consoleAppTest.patterns
+namespace colorfulLogs.patterns
 {
     public class PatternMatcher
     {

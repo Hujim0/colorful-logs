@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using consoleAppTest.fileWatcher;
-using consoleAppTest.structs;
+using colorfulLogs.fileWatcher;
+using colorfulLogs.structs;
 
 public class LocalFileManager
 {
-    public event Action<IndexedLine>? OnLineIndexed;
+    public event Action<List<IndexedLine>>? OnLinesToIndex;
 
     private readonly Dictionary<string, LocalFile> _localFiles = new Dictionary<string, LocalFile>();
     private readonly DataSource _dataSource;
@@ -87,6 +87,8 @@ public class LocalFileManager
         int completeLines = lines.Length - 1;
         bool endsWithNewLine = newContent.EndsWith('\n');
 
+        List<IndexedLine> linesToIndex = [];
+
         for (int i = 0; i < completeLines; i++)
         {
             file.LastLineNumber++;
@@ -97,9 +99,10 @@ public class LocalFileManager
                 LineText = lines[i].TrimEnd('\r'),  // Handle CRLF
                 LineNumber = (ulong)file.LastLineNumber
             };
-
-            OnLineIndexed?.Invoke(indexedLine);
+            linesToIndex.Add(indexedLine);
         }
+
+        OnLinesToIndex?.Invoke(linesToIndex);
 
         // Update pending line
         file.PendingLine = endsWithNewLine ? "" : lines.Last();

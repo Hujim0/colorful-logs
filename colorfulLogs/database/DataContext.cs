@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using consoleAppTest.structs;
+using colorfulLogs.structs;
 using Microsoft.EntityFrameworkCore;
 
-namespace consoleAppTest.database
+namespace colorfulLogs.database
 {
     public class DataContext(string databaseName) : DbContext
     {

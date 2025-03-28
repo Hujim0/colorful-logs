@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace consoleAppTest.structs
+namespace colorfulLogs.structs
 {
     public class PatternComponent
     {

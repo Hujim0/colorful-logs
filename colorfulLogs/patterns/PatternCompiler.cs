@@ -1,8 +1,8 @@
 
 using System.Text.RegularExpressions;
-using consoleAppTest.patterns;
+using colorfulLogs.patterns;
 
-namespace consoleAppTest.structs
+namespace colorfulLogs.structs
 {
     public class PatternCompiler : IPatternCompiler
     {

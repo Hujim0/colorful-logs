@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using consoleAppTest.database;
-using consoleAppTest.patterns;
-using consoleAppTest.structs;
+using colorfulLogs.database;
+using colorfulLogs.patterns;
+using colorfulLogs.structs;
 
-namespace consoleAppTest.Tests
+namespace colorfulLogs.Tests
 {
     public class PatternMatcherTests
     {
@@ -334,4 +334,3 @@ namespace consoleAppTest.Tests
         }
     }
 }
-

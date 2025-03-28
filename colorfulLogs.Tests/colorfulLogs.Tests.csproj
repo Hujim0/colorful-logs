@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\consoleAppTest\consoleAppTest.csproj" />
+    <ProjectReference Include="..\colorfulLogs\colorfulLogs.csproj" />
   </ItemGroup>
 
 </Project>

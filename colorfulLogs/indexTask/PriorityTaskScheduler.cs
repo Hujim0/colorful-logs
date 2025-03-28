@@ -5,9 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace consoleAppTest.indexTask
+namespace colorfulLogs.indexTask
 {
-
     public enum TaskPriority
     {
         High,
@@ -23,8 +22,8 @@ namespace consoleAppTest.indexTask
 
     public class PriorityTaskScheduler : IDisposable
     {
-        private readonly BlockingCollection<IndexTask> _highPriorityQueue = new BlockingCollection<IndexTask>();
-        private readonly BlockingCollection<IndexTask> _lowPriorityQueue = new BlockingCollection<IndexTask>();
+        private readonly BlockingCollection<IndexTask> _highPriorityQueue = [];
+        private readonly BlockingCollection<IndexTask> _lowPriorityQueue = [];
         private readonly List<Thread> _highPriorityWorkers;
         private readonly List<Thread> _lowPriorityWorkers;
         private bool _disposed;
