@@ -73,15 +73,6 @@ namespace colorfulLogs.database
             modelBuilder.Entity<IndexedValue>()
                 .HasIndex(iv => new { iv.PatternId, iv.Value });
 
-            // // Configure LocalFile -> DataSource relationship
-            // modelBuilder.Entity<LocalFile>(entity =>
-            // {
-            //     entity.HasOne(f => f.dataSource)
-            //         .WithMany(l => l.)
-            //         .HasForeignKey()  // Shadow property
-            //         .IsRequired();
-            // });
-
             // Configure Sequential GUIDs for all entities
             modelBuilder.Entity<DataSource>()
                 .Property(b => b.Id)
@@ -119,5 +110,7 @@ namespace colorfulLogs.database
         public DbSet<TagInstance> TagInstances { get; set; }
         public DbSet<Pattern> Patterns { get; set; }
         public DbSet<PatternComponent> PatternComponents { get; set; }
+        public DbSet<LocalFile> LocalFiles { get; set; }
+
     }
 }

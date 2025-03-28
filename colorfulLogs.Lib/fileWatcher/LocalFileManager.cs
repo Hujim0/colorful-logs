@@ -6,17 +6,26 @@ using System.Text;
 using colorfulLogs.fileWatcher;
 using colorfulLogs.structs;
 
-public class LocalFileManager
+public partial class LocalFileManager
 {
     public event Action<List<IndexedLine>>? OnLinesToIndex;
 
     private readonly Dictionary<string, LocalFile> _localFiles = [];
     private readonly DataSource _dataSource;
+    public Dictionary<string, LocalFile> GetTrackedFiles() => _localFiles;
 
-    public LocalFileManager(FileWatcher fileWatcher, DataSource dataSource)
+
+    public LocalFileManager(FileWatcher fileWatcher, DataSource dataSource, List<LocalFile>? persistedState = null)
     {
         _dataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));
 
+        // Initialize with persisted state (if any)
+        _localFiles = persistedState?.ToDictionary(file => file.Path) ?? [];
+
+        // Always reconcile with current filesystem state
+        ReconcileInitialState(fileWatcher.folderPath);
+
+        // Subscribe to events AFTER reconciliation
         fileWatcher.FileCreated += HandleFileCreated;
         fileWatcher.FileDeleted += HandleFileDeleted;
         fileWatcher.FileAppended += HandleFileAppended;
@@ -25,6 +34,57 @@ public class LocalFileManager
         fileWatcher.ErrorOccurred += HandleErrorOccurred;
     }
 
+    private void ReconcileInitialState(string folderPath)
+    {
+        try
+        {
+            var normalizedFolder = Path.GetFullPath(folderPath);
+            var currentFiles = Directory.GetFiles(normalizedFolder, "*.*", SearchOption.AllDirectories)
+                .Select(Path.GetFullPath)
+                .ToList();
+            var currentFileSet = new HashSet<string>(currentFiles, StringComparer.OrdinalIgnoreCase);
+
+            // Remove files that no longer exist
+            foreach (var path in _localFiles.Keys.ToList())
+            {
+                var normalizedPath = Path.GetFullPath(path);
+                if (!currentFileSet.Contains(normalizedPath))
+                {
+                    HandleFileDeleted(normalizedPath); // This removes from _localFiles
+                }
+            }
+
+            // Add/update existing files
+            foreach (var filePath in currentFiles)
+            {
+                var normalizedPath = Path.GetFullPath(filePath);
+                var fileInfo = new FileInfo(normalizedPath);
+                if (!fileInfo.Exists) continue;
+
+                if (_localFiles.TryGetValue(normalizedPath, out LocalFile? localFile))
+                {
+                    // Handle size changes
+                    if (fileInfo.Length > localFile.LastLength)
+                    {
+                        HandleFileAppended(normalizedPath, fileInfo.Length);
+                    }
+                    else if (fileInfo.Length < localFile.LastLength)
+                    {
+                        HandleFileTruncated(normalizedPath, fileInfo.Length);
+                    }
+                    localFile.LastLength = fileInfo.Length;
+                }
+                else
+                {
+                    HandleFileCreated(normalizedPath, fileInfo.Length);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Reconciliation error: {ex.Message}");
+        }
+    }
     private void HandleFileCreated(string path, long length)
     {
         if (!_localFiles.ContainsKey(path))

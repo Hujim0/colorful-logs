@@ -4,21 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using colorfulLogs.Lib.indexTask;
 
 namespace colorfulLogs.indexTask
 {
-    public enum TaskPriority
-    {
-        High,
-        Low
-    }
 
-    public class IndexTask
-    {
-        public TaskPriority Priority { get; set; }
-        public required Action Work { get; set; }
-        public CancellationToken CancellationToken { get; set; }
-    }
 
     public class PriorityTaskScheduler : IDisposable
     {

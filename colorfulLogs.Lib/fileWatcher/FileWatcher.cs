@@ -14,6 +14,8 @@ namespace colorfulLogs.fileWatcher
         private readonly SemaphoreSlim _debounceSemaphore = new(1, 1);
         private readonly bool _trackInitialFiles;
 
+        public string folderPath = null!;
+
         public event Action<string, long>? FileCreated;
         public event Action<string>? FileDeleted;
         public event Action<string, long>? FileAppended;
@@ -23,6 +25,7 @@ namespace colorfulLogs.fileWatcher
 
         public FileWatcher(string folderPath, TimeSpan? debounceDelay = null, bool trackInitialFiles = true)
         {
+            this.folderPath = folderPath;
             _debounceDelay = debounceDelay ?? TimeSpan.FromMilliseconds(500);
             _trackInitialFiles = trackInitialFiles;
             _fileStates = new ConcurrentDictionary<string, FileState>();
