@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using colorfulLogs.structs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace colorfulLogs.database
 {
@@ -20,11 +21,11 @@ namespace colorfulLogs.database
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<DataSource>().Property(b => b.Id).HasDefaultValue(new Guid());
-            modelBuilder.Entity<IndexedLine>().Property(b => b.Id).HasDefaultValue(new Guid());
-            modelBuilder.Entity<IndexedValue>().Property(b => b.Id).HasDefaultValue(new Guid());
-            modelBuilder.Entity<TagInstance>().Property(b => b.Id).HasDefaultValue(new Guid());
-            modelBuilder.Entity<Pattern>().Property(b => b.Id).HasDefaultValue(new Guid());
+            modelBuilder.Entity<DataSource>().Property(b => b.Id).HasValueGenerator<SequentialGuidValueGenerator>();
+            modelBuilder.Entity<IndexedLine>().Property(b => b.Id).HasValueGenerator<SequentialGuidValueGenerator>();
+            modelBuilder.Entity<IndexedValue>().Property(b => b.Id).HasValueGenerator<SequentialGuidValueGenerator>();
+            modelBuilder.Entity<TagInstance>().Property(b => b.Id).HasValueGenerator<SequentialGuidValueGenerator>();
+            modelBuilder.Entity<Pattern>().Property(b => b.Id).HasValueGenerator<SequentialGuidValueGenerator>();
         }
 
         public DbSet<DataSource> DataSources { get; set; }

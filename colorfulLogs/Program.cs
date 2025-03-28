@@ -11,17 +11,7 @@ Console.WriteLine("Hello, World!");
 //     DatabaseFacade databaseFacade = new(context);
 //     databaseFacade.EnsureCreated();
 
-//     var dataSource = new DataSource()
-//     {
-//         Id = Guid.NewGuid(),
-//         Name = "test",
-//     };
-
-//     context.DataSources.Add(dataSource);
-
 //     context.SaveChanges();
-
-//     var allDataSources = context.DataSources.ToList();
 // }
 
 
@@ -40,20 +30,25 @@ DataSource source = new()
 
 LocalFileManager manager = new(fileWatcher: watcher, source);
 int processorCount = Environment.ProcessorCount;
-PriorityTaskScheduler taskScheduler = new(processorCount/2, processorCount/2);
+PriorityTaskScheduler taskScheduler = new(processorCount / 2, processorCount / 2);
 
-manager.OnLinesToIndex += indexedLine =>
+manager.OnLinesToIndex += indexedLines =>
 {
-    taskScheduler.QueueTask(new IndexTask() {
-        Work = () => {
-            Console.WriteLine($"Line {indexedLine.LineNumber}: {indexedLine.LineText}");
-
-            var values = patternMatcher.ProcessLine(indexedLine);
-            // Send to other systems or store in database
-
-            foreach (IndexedValue value in values)
+    taskScheduler.QueueTask(new IndexTask()
+    {
+        Work = () =>
+        {
+            foreach (var indexedLine in indexedLines)
             {
-                Console.WriteLine($"new value: {value.Value} from {value.Pattern.PatternName}");
+                Console.WriteLine($"Line {indexedLine.LineNumber}: {indexedLine.LineText}");
+
+                var values = patternMatcher.ProcessLine(indexedLine);
+
+                // Send to other systems or store in database
+                foreach (IndexedValue value in values)
+                {
+                    Console.WriteLine($"new value: {value.Value} from {value.Pattern.PatternName}");
+                }
             }
         }
     });

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using colorfulLogs.database;
@@ -20,6 +21,11 @@ namespace colorfulLogs.Tests
             var addressPort = DefaultPatterns.CreateAddressPortPattern(address, port);
             var resource = DefaultPatterns.CreateResourcePattern();
 
+            Pattern.GenerateNewGuids(address);
+            Pattern.GenerateNewGuids(port);
+            Pattern.GenerateNewGuids(addressPort);
+            Pattern.GenerateNewGuids(resource);
+
             var patterns = new List<Pattern> { address, port, addressPort, resource };
             var matcher = new PatternMatcher(patterns, new PatternCompiler());
 
@@ -36,9 +42,9 @@ namespace colorfulLogs.Tests
             var results = matcher.ProcessLine(line);
 
             // Assert
-            var addressMatches = results.Where(iv => iv.Pattern.Id == address.Id).ToList();
-            var portMatches = results.Where(iv => iv.Pattern.Id == port.Id).ToList();
-            var addressPortMatches = results.Where(iv => iv.Pattern.Id == addressPort.Id).ToList();
+            var addressMatches = results.Where(iv => iv.Pattern.PatternName == address.PatternName).ToList();
+            var portMatches = results.Where(iv => iv.Pattern.PatternName == port.PatternName).ToList();
+            var addressPortMatches = results.Where(iv => iv.Pattern.PatternName == addressPort.PatternName).ToList();
 
             // Verify base components
             Assert.Single(addressMatches);
@@ -67,8 +73,13 @@ namespace colorfulLogs.Tests
             var address = DefaultPatterns.CreateAddressPattern();
             var port = DefaultPatterns.CreatePortPattern();
             var resource = DefaultPatterns.CreateResourcePattern();
-
             var urlPattern = DefaultPatterns.CreateUrlWithIpAndPortPattern(address, port, resource);
+
+            Pattern.GenerateNewGuids(address);
+            Pattern.GenerateNewGuids(port);
+            Pattern.GenerateNewGuids(resource);
+            Pattern.GenerateNewGuids(urlPattern);
+
             var patterns = new List<Pattern> { address, port, urlPattern };
             var matcher = new PatternMatcher(patterns, new PatternCompiler());
 
@@ -82,8 +93,8 @@ namespace colorfulLogs.Tests
             var results = matcher.ProcessLine(line);
 
             // Assert
-            var urlMatches = results.Where(iv => iv.Pattern.Id == urlPattern.Id).ToList();
-            var resourceMatches = results.Where(iv => iv.Pattern.Id == resource.Id).ToList();
+            var urlMatches = results.Where(iv => iv.Pattern.PatternName == urlPattern.PatternName).ToList();
+            var resourceMatches = results.Where(iv => iv.Pattern.PatternName == resource.PatternName).ToList();
 
             // Verify full URL match
             Assert.Single(urlMatches);
@@ -108,6 +119,11 @@ namespace colorfulLogs.Tests
             var address = DefaultPatterns.CreateAddressPattern();
             var port = DefaultPatterns.CreatePortPattern();
             var addressPort = DefaultPatterns.CreateAddressPortPattern(address, port);
+
+            Pattern.GenerateNewGuids(address);
+            Pattern.GenerateNewGuids(port);
+            Pattern.GenerateNewGuids(addressPort);
+
             var patterns = new List<Pattern> { address, port, addressPort };
             var matcher = new PatternMatcher(patterns, new PatternCompiler());
 
@@ -125,7 +141,7 @@ namespace colorfulLogs.Tests
             var results = matcher.ProcessLine(line);
 
             // Assert
-            var addressPortMatches = results.Where(iv => iv.Pattern.Id == addressPort.Id).ToList();
+            var addressPortMatches = results.Where(iv => iv.Pattern.PatternName == addressPort.PatternName).ToList();
             Assert.Equal(2, addressPortMatches.Count);
 
             var firstMatch = addressPortMatches[0];
@@ -146,8 +162,12 @@ namespace colorfulLogs.Tests
             var address = DefaultPatterns.CreateAddressPattern();
             var port = DefaultPatterns.CreatePortPattern();
             var resource = DefaultPatterns.CreateResourcePattern();
-
             var urlPattern = DefaultPatterns.CreateUrlWithIpAndPortPattern(address, port, resource);
+
+            Pattern.GenerateNewGuids(address);
+            Pattern.GenerateNewGuids(port);
+            Pattern.GenerateNewGuids(resource);
+            Pattern.GenerateNewGuids(urlPattern);
 
             //removed port from it
             var patterns = new List<Pattern> { address, urlPattern };
@@ -163,9 +183,9 @@ namespace colorfulLogs.Tests
             var results = matcher.ProcessLine(line);
 
             // Assert
-            var urlMatches = results.Where(iv => iv.Pattern.Id == urlPattern.Id).ToList();
-            var resourceMatches = results.Where(iv => iv.Pattern.Id == resource.Id).ToList();
-            var portMatches = results.Where(iv => iv.Pattern.Id == port.Id).ToList();
+            var urlMatches = results.Where(iv => iv.Pattern.PatternName == urlPattern.PatternName).ToList();
+            var resourceMatches = results.Where(iv => iv.Pattern.PatternName == resource.PatternName).ToList();
+            var portMatches = results.Where(iv => iv.Pattern.PatternName == port.PatternName).ToList();
 
 
             // Verify full URL match
@@ -178,50 +198,9 @@ namespace colorfulLogs.Tests
         [Fact]
         public void ShouldMatchHttpMethods()
         {
-            // Arrange
-            var getPattern = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "HTTP GET",
-                SyntaxString = @"\bGET\b",
-                Components = []
-            };
-            var postPattern = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "HTTP POST",
-                SyntaxString = @"\bPOST\b",
-                Components = []
-            };
-            var headPattern = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "HTTP HEAD",
-                SyntaxString = @"\bHEAD\b",
-                Components = []
-            };
-            var optionsPattern = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "HTTP OPTIONS",
-                SyntaxString = @"\bOPTIONS\b",
-                Components = []
-            };
+            var httpMethodPattern = DefaultPatterns.CreateHttpMethodPattern();
 
-            var httpMethodPattern = new Pattern
-            {
-                Id = Guid.NewGuid(),
-                PatternName = "HTTP Method",
-                SyntaxString = "$http_get|$http_post|$http_head|$http_options",
-                Components = [],
-            };
-            httpMethodPattern.Components =
-            [
-                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_get", ChildPattern = getPattern },
-                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_post", ChildPattern = postPattern },
-                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_head", ChildPattern = headPattern },
-                new() { ParentPattern = httpMethodPattern, PlaceholderName = "http_options", ChildPattern = optionsPattern }
-            ];
+            Pattern.GenerateNewGuids(httpMethodPattern);
 
             var matcher = new PatternMatcher([httpMethodPattern], new PatternCompiler());
             var line = new IndexedLine
@@ -234,8 +213,9 @@ namespace colorfulLogs.Tests
             var results = matcher.ProcessLine(line);
 
             // Assert
-            var matches = results.Where(m => m.Pattern.Id == httpMethodPattern.Id).ToList();
+            var matches = results.Where(m => m.Pattern.PatternName == httpMethodPattern.PatternName).ToList();
             Assert.Single(matches);
+
             Assert.Equal("GET", matches[0].Value);
             Assert.Equal(0, matches[0].TagInstances[0].StartIndex);
             Assert.Equal(3, matches[0].TagInstances[0].Length);
@@ -250,6 +230,10 @@ namespace colorfulLogs.Tests
             var portPattern = DefaultPatterns.CreatePortPattern();
             var addressPortPattern = DefaultPatterns.CreateAddressPortPattern(addressPattern, portPattern);
 
+            Pattern.GenerateNewGuids(addressPattern);
+            Pattern.GenerateNewGuids(portPattern);
+            Pattern.GenerateNewGuids(addressPortPattern);
+
             // Only include composite patterns, not standalone port
             var matcher = new PatternMatcher([addressPattern, addressPortPattern], new PatternCompiler());
             var line = new IndexedLine
@@ -262,11 +246,11 @@ namespace colorfulLogs.Tests
             var results = matcher.ProcessLine(line);
 
             // Assert
-            var portMatches = results.Where(m => m.Pattern.Id == portPattern.Id).ToList();
+            var portMatches = results.Where(m => m.Pattern.PatternName == portPattern.PatternName).ToList();
             Assert.Empty(portMatches); // Port shouldn't match when not part of address:port
 
             // Verify address:port pattern doesn't match invalid format
-            var addressPortMatches = results.Where(m => m.Pattern.Id == addressPortPattern.Id).ToList();
+            var addressPortMatches = results.Where(m => m.Pattern.PatternName == addressPortPattern.PatternName).ToList();
             Assert.Empty(addressPortMatches);
         }
 
@@ -281,13 +265,22 @@ namespace colorfulLogs.Tests
             var userAgentPattern = DefaultPatterns.CreateUserAgentPattern();
             var resourcePattern = DefaultPatterns.CreateResourcePattern();
 
+            Pattern.GenerateNewGuids(ipPattern);
+            Pattern.GenerateNewGuids(timestampPattern);
+            Pattern.GenerateNewGuids(httpVersionPattern);
+            Pattern.GenerateNewGuids(statusCodePattern);
+            Pattern.GenerateNewGuids(userAgentPattern);
+            Pattern.GenerateNewGuids(resourcePattern);
+
             // Composite patterns
             var httpMethodPattern = DefaultPatterns.CreateHttpMethodPattern();
+            Pattern.GenerateNewGuids(httpMethodPattern);
 
             var fullRequestPattern = DefaultPatterns.CreateFullRequestPattern(
                 httpMethodPattern,
                 resourcePattern,
                 httpVersionPattern);
+            Pattern.GenerateNewGuids(fullRequestPattern);
 
             var logEntryPattern = DefaultPatterns.CreateLogEntryPattern(
                 ipPattern,
@@ -295,6 +288,8 @@ namespace colorfulLogs.Tests
                 fullRequestPattern,
                 statusCodePattern,
                 userAgentPattern);
+
+            Pattern.GenerateNewGuids(logEntryPattern);
 
             // Only include composite patterns, not standalone port
             var matcher = new PatternMatcher([
@@ -304,6 +299,7 @@ namespace colorfulLogs.Tests
                 fullRequestPattern,
                 logEntryPattern
             ], new PatternCompiler());
+
             var line = new IndexedLine
             {
                 LineText = "159.89.16.205 - - [24/Mar/2025:07:17:41 +0300] \"GET /query?q=SHOW+DIAGNOSTICS HTTP/1.1\" 404 162 \"-\" \"Go-http-client/1.1\"",
@@ -313,14 +309,14 @@ namespace colorfulLogs.Tests
             // Act
             var results = matcher.ProcessLine(line);
 
-            var logEntryMatches = results.Where(m => m.Pattern.Id == logEntryPattern.Id).ToList();
-            var ipMatches = results.Where(m => m.Pattern.Id == ipPattern.Id).ToList();
-            var timestampMatches = results.Where(m => m.Pattern.Id == timestampPattern.Id).ToList();
-            var httpMethodMatches = results.Where(m => m.Pattern.Id == httpMethodPattern.Id).ToList();
-            var resourceMatches = results.Where(m => m.Pattern.Id == resourcePattern.Id).ToList();
-            var httpVersionMatches = results.Where(m => m.Pattern.Id == httpVersionPattern.Id).ToList();
-            var statusCodeMatches = results.Where(m => m.Pattern.Id == statusCodePattern.Id).ToList();
-            var userAgentMatches = results.Where(m => m.Pattern.Id == userAgentPattern.Id).ToList();
+            var logEntryMatches = results.Where(m => m.Pattern.PatternName == logEntryPattern.PatternName).ToList();
+            var ipMatches = results.Where(m => m.Pattern.PatternName == ipPattern.PatternName).ToList();
+            var timestampMatches = results.Where(m => m.Pattern.PatternName == timestampPattern.PatternName).ToList();
+            var httpMethodMatches = results.Where(m => m.Pattern.PatternName == httpMethodPattern.PatternName).ToList();
+            var resourceMatches = results.Where(m => m.Pattern.PatternName == resourcePattern.PatternName).ToList();
+            var httpVersionMatches = results.Where(m => m.Pattern.PatternName == httpVersionPattern.PatternName).ToList();
+            var statusCodeMatches = results.Where(m => m.Pattern.PatternName == statusCodePattern.PatternName).ToList();
+            var userAgentMatches = results.Where(m => m.Pattern.PatternName == userAgentPattern.PatternName).ToList();
 
 
             Assert.Single(logEntryMatches);

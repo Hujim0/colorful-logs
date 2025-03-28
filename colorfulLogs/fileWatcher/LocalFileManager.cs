@@ -31,7 +31,6 @@ public class LocalFileManager
         {
             var localFile = new LocalFile
             {
-                Id = Guid.NewGuid(),
                 Path = path,
                 LastLength = length,
                 dataSource = _dataSource,
@@ -94,7 +93,6 @@ public class LocalFileManager
             file.LastLineNumber++;
             var indexedLine = new IndexedLine
             {
-                Id = Guid.NewGuid(),
                 Source = _dataSource,
                 LineText = lines[i].TrimEnd('\r'),  // Handle CRLF
                 LineNumber = (ulong)file.LastLineNumber

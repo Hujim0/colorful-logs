@@ -8,7 +8,6 @@ namespace colorfulLogs.patterns
         {
             return new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "Apache Timestamp",
                 SyntaxString = @"\[\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2} [+-]\d{4}\]",
                 Components = []
@@ -19,7 +18,6 @@ namespace colorfulLogs.patterns
         {
             return new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP Version",
                 SyntaxString = @"HTTP/\d\.\d",
                 Components = []
@@ -30,7 +28,6 @@ namespace colorfulLogs.patterns
         {
             return new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP Status Code",
                 SyntaxString = @"\d{3}",
                 Components = []
@@ -40,7 +37,6 @@ namespace colorfulLogs.patterns
         {
             return new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "User Agent",
                 SyntaxString = "\"[^\"]+\"",
                 Components = []
@@ -54,7 +50,6 @@ namespace colorfulLogs.patterns
         {
             var pattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "Full HTTP Request",
                 SyntaxString = @"$http_method $resource $http_version",
                 Components = []
@@ -92,7 +87,6 @@ namespace colorfulLogs.patterns
         {
             var pattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "Apache Log Entry",
                 SyntaxString = "$ip - - $timestamp \"$request\" $status_code \\d+ \"-\" $user_agent",
                 Components = []
@@ -113,7 +107,6 @@ namespace colorfulLogs.patterns
         {
             return new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "Resource Path",
                 SyntaxString = @"/([^/^\ ]/?)*",
                 Components = []
@@ -124,7 +117,6 @@ namespace colorfulLogs.patterns
         {
             return new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "IPv4 Address",
                 SyntaxString = @"(?:\d{1,3}\.){3}\d{1,3}",
                 Components = []
@@ -135,28 +127,24 @@ namespace colorfulLogs.patterns
         {
             var getPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP GET",
                 SyntaxString = "GET",
                 Components = []
             };
             var postPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP POST",
                 SyntaxString = "POST",
                 Components = []
             };
             var headPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP HEAD",
                 SyntaxString = "HEAD",
                 Components = []
             };
             var optionsPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP OPTIONS",
                 SyntaxString = "OPTIONS",
                 Components = []
@@ -164,35 +152,30 @@ namespace colorfulLogs.patterns
 
             var putPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP PUT",
                 SyntaxString = "PUT",
                 Components = [],
             };
             var deletePattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP DELETE",
                 SyntaxString = "DELETE",
                 Components = [],
             };
             var connectPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP CONNECT",
                 SyntaxString = "CONNECT",
                 Components = [],
             };
             var tracePattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP TRACE",
                 SyntaxString = "TRACE",
                 Components = [],
             };
             var patchPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP PATCH",
                 SyntaxString = "PATCH",
                 Components = [],
@@ -200,7 +183,6 @@ namespace colorfulLogs.patterns
 
             var httpMethodPattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "HTTP Method",
                 SyntaxString = "$http_get|$http_post|$http_head|$http_options|$http_put|$http_delete|$http_connect|$http_trace|$http_patch",
                 Components = [],
@@ -228,7 +210,6 @@ namespace colorfulLogs.patterns
         {
             return new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "Port Number",
                 SyntaxString = @"\b\d{1,5}\b",
                 Components = []
@@ -239,7 +220,6 @@ namespace colorfulLogs.patterns
         {
             var pattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "Address with Port",
                 SyntaxString = @"$address:$port",
                 Components = [],
@@ -265,7 +245,6 @@ namespace colorfulLogs.patterns
         {
             var pattern = new Pattern
             {
-                Id = Guid.NewGuid(),
                 PatternName = "API Endpoint",
                 SyntaxString = @"https://$address:$port$resource",
                 Components = []
