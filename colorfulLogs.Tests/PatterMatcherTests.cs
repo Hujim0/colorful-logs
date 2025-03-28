@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using colorfulLogs.database;
 using colorfulLogs.patterns;
 using colorfulLogs.structs;
 
