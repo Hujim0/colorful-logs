@@ -10,7 +10,7 @@ public class LocalFileManager
 {
     public event Action<List<IndexedLine>>? OnLinesToIndex;
 
-    private readonly Dictionary<string, LocalFile> _localFiles = new Dictionary<string, LocalFile>();
+    private readonly Dictionary<string, LocalFile> _localFiles = [];
     private readonly DataSource _dataSource;
 
     public LocalFileManager(FileWatcher fileWatcher, DataSource dataSource)

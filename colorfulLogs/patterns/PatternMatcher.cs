@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using colorfulLogs.structs;
@@ -7,14 +8,14 @@ namespace colorfulLogs.patterns
     public class PatternMatcher
     {
         private List<Pattern> _processingOrder;
-        private Dictionary<Guid, Regex> _compiledRegexes;
+        private ConcurrentDictionary<Guid, Regex> _compiledRegexes;
 
         public PatternMatcher(List<Pattern> patterns, IPatternCompiler patternCompiler)
         {
             var (compiledRegexes, sortedPatterns) = patternCompiler.CompilePatterns(patterns);
-            _compiledRegexes = compiledRegexes.ToDictionary(
+            _compiledRegexes = new ConcurrentDictionary<Guid, Regex>(compiledRegexes.ToDictionary(
                 kvp => kvp.Key,
-                kvp => new Regex(kvp.Value, RegexOptions.Compiled));
+                kvp => new Regex(kvp.Value, RegexOptions.Compiled)));
             _processingOrder = sortedPatterns;
         }
 

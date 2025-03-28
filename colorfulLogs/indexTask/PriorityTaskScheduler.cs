@@ -58,7 +58,7 @@ namespace colorfulLogs.indexTask
             }
         }
 
-        private List<Thread> CreateWorkerThreads(
+        private static List<Thread> CreateWorkerThreads(
             BlockingCollection<IndexTask> queue,
             int threadCount,
             string threadNamePrefix)

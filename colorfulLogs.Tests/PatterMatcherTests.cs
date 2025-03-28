@@ -34,6 +34,7 @@ namespace colorfulLogs.Tests
 
             var line = new IndexedLine
             {
+                Source = new DataSource { Name = "tests" },
                 LineText = "Server at 192.168.1.1:8080",
                 LineNumber = 1
             };
@@ -85,6 +86,7 @@ namespace colorfulLogs.Tests
 
             var line = new IndexedLine
             {
+                Source = new DataSource { Name = "tests" },
                 LineText = "Request to https://10.0.0.1:8080/api/v1/users",
                 LineNumber = 1
             };
@@ -129,6 +131,7 @@ namespace colorfulLogs.Tests
 
             var line = new IndexedLine
             {
+                Source = new DataSource { Name = "tests" },
                 LineText = "Connections: 192.168.0.1:80, 10.0.0.1:443",
                 LineNumber = 1
             };
@@ -175,6 +178,7 @@ namespace colorfulLogs.Tests
 
             var line = new IndexedLine
             {
+                Source = new DataSource { Name = "tests" },
                 LineText = "Request #3422 to https://10.0.0.1:8080/api/v1/users",
                 LineNumber = 1
             };
@@ -205,6 +209,7 @@ namespace colorfulLogs.Tests
             var matcher = new PatternMatcher([httpMethodPattern], new PatternCompiler());
             var line = new IndexedLine
             {
+                Source = new DataSource { Name = "tests" },
                 LineText = "GET /api/data HTTP/1.1",
                 LineNumber = 1
             };
@@ -238,6 +243,7 @@ namespace colorfulLogs.Tests
             var matcher = new PatternMatcher([addressPattern, addressPortPattern], new PatternCompiler());
             var line = new IndexedLine
             {
+                Source = new DataSource { Name = "tests" },
                 LineText = "Invalid port: 8080",
                 LineNumber = 1
             };
@@ -302,6 +308,7 @@ namespace colorfulLogs.Tests
 
             var line = new IndexedLine
             {
+                Source = new DataSource { Name = "tests" },
                 LineText = "159.89.16.205 - - [24/Mar/2025:07:17:41 +0300] \"GET /query?q=SHOW+DIAGNOSTICS HTTP/1.1\" 404 162 \"-\" \"Go-http-client/1.1\"",
                 LineNumber = 1
             };

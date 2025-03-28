@@ -1,5 +1,6 @@
 
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace colorfulLogs.structs
 {
@@ -7,7 +8,11 @@ namespace colorfulLogs.structs
     {
         [Key]
         public Guid Id { get; set; }
-        public DataSource? Source { get; set; }
+
+        public Guid SourceId { get; set; }
+
+        [ForeignKey(nameof(SourceId))]
+        public required DataSource Source { get; set; }
         public required string LineText { get; set; }
         public ulong LineNumber { get; set; }
 

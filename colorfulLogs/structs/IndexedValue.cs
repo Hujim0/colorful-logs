@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace colorfulLogs.structs
@@ -9,7 +10,13 @@ namespace colorfulLogs.structs
         [Key]
         public Guid Id { get; set; }
         public required string Value { get; set; }
+
+
+        public Guid PatternId { get; set; }
+
+        [ForeignKey(nameof(PatternId))]
         public required Pattern Pattern { get; set; }
+
         public virtual List<TagInstance> TagInstances { get; set; } = [];
 
     }
