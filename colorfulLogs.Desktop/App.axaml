@@ -1,11 +1,14 @@
-<Application xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<Application
     x:Class="colorfulLogs.Desktop.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:colorfulLogs.Desktop"
     xmlns:views="clr-namespace:colorfulLogs.Desktop.Views"
     RequestedThemeVariant="Default">
-    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available
-    options. -->
+    <!--
+        "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available
+        options.
+    -->
 
     <Application.DataTemplates>
         <local:ViewLocator />
@@ -16,5 +19,17 @@
 
     <Application.Styles>
         <FluentTheme />
+    </Application.Styles>
+
+    <Application.Styles>
+        <Style Selector="TabItem">
+            <Setter Property="Background" Value="#2d2d2d" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="10 5" />
+        </Style>
+        <Style Selector="TreeView">
+            <Setter Property="Background" Value="#252526" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
     </Application.Styles>
 </Application>

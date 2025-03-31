@@ -6,23 +6,56 @@ using System;
 using System.Threading.Tasks;
 using Avalonia;
 using colorfulLogs.Desktop.Views;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using AvaloniaEdit.Document;
+using colorfulLogs.Desktop.Models;
 
 namespace colorfulLogs.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private string _greeting = "Welcome to Avalonia!";
+    public ObservableCollection<FileSystemEntry> FileSystem { get; } = new();
+    public ObservableCollection<TabItemViewModel> OpenTabs { get; } = new();
 
-    public string Greeting
+    private TabItemViewModel? _selectedTab;
+    public TabItemViewModel? SelectedTab
     {
-        get => _greeting;
-        // set => this.RaiseAndSetIfChanged(ref _greeting, value); // Use RaiseAndSetIfChanged
+        get => _selectedTab;
+        set => this.RaiseAndSetIfChanged(ref _selectedTab, value);
     }
 
+    public TextDocument? CurrentDocument { get; set; }
     public ReactiveCommand<Unit, Unit> ShowCreateDataSourceDialogCommand { get; }
-
+    private void CloseTab(TabItemViewModel tab)
+    {
+        OpenTabs.Remove(tab);
+        if (OpenTabs.Count == 0)
+        {
+            // Add default tab if needed
+        }
+    }
     public MainWindowViewModel()
     {
+        // Initialize sample file system
+        FileSystem.Add(new FileSystemEntry
+        {
+            Name = "Project",
+            IsDirectory = true,
+            Children =
+        {
+            new FileSystemEntry { Name = "Main.axaml", IsDirectory = false },
+            new FileSystemEntry { Name = "Main.axaml.cs", IsDirectory = false }
+        }
+        });
+
+        // Initialize tabs
+        OpenTabs.Add(new TabItemViewModel(CloseTab)
+        {
+            Header = "Welcome"
+        });
+
+
         ShowCreateDataSourceDialogCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             var dialog = new CreateDataSourceWindow

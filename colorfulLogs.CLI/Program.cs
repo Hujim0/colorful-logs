@@ -128,3 +128,17 @@ class Program
         Console.ReadKey();
     }
 }
+
+// body.dark {
+//   --c-black: #1a1a1a;
+//   --c-white: #e1e1e1;
+//   --c-grey: #898989;
+//   --c-dark-grey: #222224;
+//   --c-purple: #b462ff;
+//   --c-fuschia: #ff45b4;
+//   --c-blue: #18b6ff;
+//   --c-green: #1beb9e;
+//   --c-orange: #ff9528;
+//   --c-orange-low-saturation: #a5692d;
+//   --c-yellow: #dddd25;
+// }

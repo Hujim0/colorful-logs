@@ -1,20 +1,69 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:colorfulLogs.Desktop.ViewModels"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="colorfulLogs.Desktop.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="colorfulLogs.Desktop">
+<Window
+    x:Class="colorfulLogs.Desktop.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:avalonEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:colorfulLogs.Desktop.Models"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:colorfulLogs.Desktop.ViewModels"
+    Title="colorfulLogs.Desktop"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:MainWindowViewModel"
+    Icon="/Assets/avalonia-logo.ico"
+    mc:Ignorable="d">
+    <DockPanel>
+        <!--  File Tree  -->
+        <ScrollViewer Width="250" DockPanel.Dock="Left">
+            <TreeView x:Name="FileTree" ItemsSource="{Binding FileSystem}">
+                <TreeView.DataTemplates>
+                    <TreeDataTemplate DataType="{x:Type local:FileSystemEntry}" ItemsSource="{Binding Children}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Image
+                                Width="16"
+                                Height="16"
+                                Source="{Binding Icon}" />
+                            <TextBlock Text="{Binding Name}" />
+                        </StackPanel>
+                    </TreeDataTemplate>
+                </TreeView.DataTemplates>
+            </TreeView>
+        </ScrollViewer>
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+        <!--  Tab Area  -->
+        <Grid DockPanel.Dock="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
+            <TabControl
+                Grid.Row="0"
+                Background="#252526"
+                ItemsSource="{Binding OpenTabs}"
+                SelectedItem="{Binding SelectedTab}">
+                <TabControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel>
+                            <TextBlock Margin="0,0,5,0" Text="{Binding Header}" />
+                            <Button
+                                Command="{Binding CloseTabCommand}"
+                                Content="×"
+                                DockPanel.Dock="Right"
+                                Foreground="White" />
+                        </DockPanel>
+                    </DataTemplate>
+                </TabControl.ItemTemplate>
+            </TabControl>
+            <!--  Editor content  -->
+            <avalonEdit:TextEditor
+                Grid.Row="1"
+                Background="#1e1e1e"
+                Document="{Binding CurrentDocument}"
+                FontFamily="Consolas"
+                FontSize="12"
+                Foreground="White" />
+        </Grid>
+    </DockPanel>
 </Window>
