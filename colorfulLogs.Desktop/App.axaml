@@ -1,0 +1,20 @@
+<Application xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="colorfulLogs.Desktop.App"
+    xmlns:local="using:colorfulLogs.Desktop"
+    xmlns:views="clr-namespace:colorfulLogs.Desktop.Views"
+    RequestedThemeVariant="Default">
+    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available
+    options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator />
+        <DataTemplate DataType="views:CreateDataSourceWindow">
+            <views:CreateDataSourceWindow />
+        </DataTemplate>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>

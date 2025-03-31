@@ -1,0 +1,58 @@
+<Window
+    x:Class="colorfulLogs.Desktop.Views.CreateDataSourceWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:colorfulLogs.Desktop.ViewModels"
+    Title="Create Data Source"
+    Width="400"
+    Height="300"
+    x:DataType="local:CreateDataSourceViewModel">
+
+    <Window.DataContext>
+        <local:CreateDataSourceViewModel />
+    </Window.DataContext>
+
+    <Grid RowDefinitions="*, Auto">
+        <!--  TabControl replaces Carousel  -->
+        <TabControl SelectedIndex="{Binding SelectedTypeIndex}">
+            <!--  File Tab  -->
+            <TabItem Header="Files">
+                <Grid>
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Path:" />
+                        <DockPanel>
+                            <TextBox IsReadOnly="True" Text="{Binding Path}" />
+                            <Button
+                                Command="{Binding SelectFolderCommand}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                                Content="Browse..." />
+                        </DockPanel>
+                        <TextBlock Text="Ignore Masks:" />
+                        <TextBox Text="{Binding IgnoreMasks}" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!--  HTTP Tab  -->
+            <TabItem Header="HTTP">
+                <Grid>
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Port:" />
+                        <NumericUpDown
+                            Maximum="65535"
+                            Minimum="1"
+                            Value="{Binding Port}" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!--  Confirmation Button  -->
+        <Button
+            Grid.Row="1"
+            Margin="10"
+            HorizontalAlignment="Right"
+            Command="{Binding ConfirmCommand}"
+            Content="Create" />
+    </Grid>
+</Window>

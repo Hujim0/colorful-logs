@@ -1,3 +1,6 @@
 {
-    "dotnet.defaultSolution": "colorfulLogs.sln"
+    "dotnet.defaultSolution": "colorfulLogs.sln",
+    "cSpell.words": [
+        "Avalonia"
+    ]
 }

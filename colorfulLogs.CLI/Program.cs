@@ -16,7 +16,7 @@ class Program
         var ignoreMaskOption = new Option<List<string>>(
             name: "--ignore-mask",
             description: "File masks to ignore (e.g., *.tmp, backup/*.log)",
-            getDefaultValue: () => new List<string>());
+            getDefaultValue: () => ["*.db"]);
         ignoreMaskOption.AddAlias("-i");
 
         var dataSourceOption = new Option<string>(
