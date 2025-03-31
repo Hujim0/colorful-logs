@@ -21,7 +21,7 @@ namespace colorfulLogs.Lib.indexTask
         public CancellationToken CancellationToken { get; set; }
 
 
-        public static IndexTask CreateDefault(TaskPriority priority, List<IndexedLine> indexedLines, PatternMatcher patternMatcher)
+        public static IndexTask CreateDefault(TaskPriority priority, List<IndexedLine> indexedLines, PatternMatcher patternMatcher, string database_name)
         {
             void work()
             {
@@ -30,7 +30,7 @@ namespace colorfulLogs.Lib.indexTask
                 {
                     // Save IndexedLines first
 
-                    using var lineContext = new DataContext("UserData");
+                    using var lineContext = new DataContext(database_name);
                     lineContext.DataSources.Attach(source);
 
                     lineContext.IndexedLines.AddRange(indexedLines);
@@ -58,7 +58,7 @@ namespace colorfulLogs.Lib.indexTask
                 {
                     lock (DataContext.DbLock) // Serialize writes
                     {
-                        using var valueContext = new DataContext("UserData");
+                        using var valueContext = new DataContext(database_name);
                         valueContext.DataSources.Attach(source);
 
                         var uniquePatterns = allValues.Select(v => v.Pattern).DistinctBy(p => p.Id).ToList();

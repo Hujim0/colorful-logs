@@ -57,7 +57,10 @@ class Program
             if (!context.Patterns.Any())
             {
                 var defaultPatterns = DefaultPatterns.GetLogPatterns();
+                var veeamLogPatterns = VeeamLogPatterns.GetLogPatterns();
+
                 context.Patterns.AddRange(defaultPatterns);
+                context.Patterns.AddRange(veeamLogPatterns);
                 await context.SaveChangesAsync();
             }
 
@@ -118,7 +121,8 @@ class Program
                 IndexTask.CreateDefault(
                     TaskPriority.High,
                     indexedLines,
-                    patternMatcher
+                    patternMatcher,
+                    dbName
                 )
             );
         };
